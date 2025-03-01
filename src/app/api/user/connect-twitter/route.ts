@@ -1,40 +1,29 @@
-import { getServerSession } from 'next-auth/next';
-import { NextResponse } from 'next/server';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import { prisma } from '@/lib/prisma';
+import { getServerSession } from "next-auth/next"
+import { NextResponse } from "next/server"
+import { authOptions } from "@/src/lib/auth"  // Doğru import yolu
+import { prisma } from "@/src/lib/prisma"
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(authOptions)
     if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 })
     }
 
-    const { walletAddress, twitterUsername, profileImageUrl } = await req.json();
+    const { walletAddress, twitterUsername, profileImageUrl } = await req.json()
 
-    // Kullanıcı kaydını kontrol et ve güncelle/oluştur
     const user = await prisma.user.upsert({
-      where: {
-        walletAddress: walletAddress,
-      },
-      update: {
-        twitterUsername,
-        profileImageUrl,
-      },
-      create: {
-        walletAddress,
-        twitterUsername,
-        profileImageUrl,
-      },
-    });
+      where: { walletAddress },
+      update: { twitterUsername, profileImageUrl },
+      create: { walletAddress, twitterUsername, profileImageUrl }
+    })
 
-    return NextResponse.json({ success: true, user });
-
+    return NextResponse.json({ success: true, user })
   } catch (error) {
-    console.error('Twitter bağlantı hatası:', error);
+    console.error('Twitter bağlantı hatası:', error)
     return NextResponse.json(
       { error: 'Twitter bağlantısı başarısız' }, 
       { status: 500 }
-    );
+    )
   }
 }
