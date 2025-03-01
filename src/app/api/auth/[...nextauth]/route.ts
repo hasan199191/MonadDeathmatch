@@ -1,37 +1,26 @@
-import { NextAuthOptions } from "next-auth";
-import NextAuth from "next-auth/next";
+import NextAuth from "next-auth";
 import TwitterProvider from "next-auth/providers/twitter";
 
-export const authOptions: NextAuthOptions = {
+const handler = NextAuth({
   providers: [
     TwitterProvider({
-      clientId: process.env.TWITTER_CLIENT_ID || "",
-      clientSecret: process.env.TWITTER_CLIENT_SECRET || "",
+      clientId: process.env.TWITTER_CLIENT_ID as string,
+      clientSecret: process.env.TWITTER_CLIENT_SECRET as string,
       version: "2.0",
     }),
   ],
-  pages: {
-    signIn: "/", // Ana sayfayı giriş sayfası olarak kullan
-  },
   callbacks: {
-    async jwt({ token, account, profile }) {
-      if (account) {
-        token.id = profile?.id;
-      }
-      return token;
-    },
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id as string;
+        session.user.id = token.sub as string;
       }
       return session;
     },
-    async redirect({ url, baseUrl }) {
-      // Giriş başarılı olduğunda doğrudan /home'a yönlendir
-      return `${baseUrl}/home`;
-    },
   },
-};
+  pages: {
+    signIn: '/',
+    error: '/',
+  },
+});
 
-const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };
