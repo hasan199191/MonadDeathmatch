@@ -1,7 +1,8 @@
-import NextAuth from "next-auth";
-import TwitterProvider from "next-auth/providers/twitter";
+import NextAuth, { type NextAuthOptions } from "next-auth"
+import TwitterProvider from "next-auth/providers/twitter"
 
-export const authOptions = {
+// Konfigürasyonu ayrı bir değişkende tutalım
+const options: NextAuthOptions = {
   providers: [
     TwitterProvider({
       clientId: process.env.TWITTER_CLIENT_ID as string,
@@ -23,5 +24,10 @@ export const authOptions = {
   },
 }
 
-const handler = NextAuth(authOptions)
-export { handler as GET, handler as POST };
+// Handler'ı oluştur
+const handler = NextAuth(options)
+
+// Route handler'ları export et
+export { handler as GET, handler as POST }
+
+// authOptions'ı ayrı bir dosyada export edelim
