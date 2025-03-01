@@ -1,0 +1,113 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Color Variables */
+  --color-background: #000000;
+  --color-surface: #16181c;
+  --color-surface-alt: rgba(0, 0, 0, 0.4);
+  --color-text: #ffffff;
+  --color-text-secondary: #71767b;
+  --color-primary: #1d9bf0;
+  --color-success: #00ba7c;
+  --color-error: #f4212e;
+
+  /* Border Radius */
+  --border-radius-sm: 6px;
+  --border-radius-md: 12px;
+  --border-radius-lg: 24px;
+  --border-radius-full: 9999px;
+
+  /* Layout */
+  --max-content-width: 1280px;
+  --navbar-height: 50px;
+  --sidebar-width: 90px;
+  --sidebar-height: 80px;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-text);
+  font-feature-settings: 'tnum' on, 'lnum' on, 'case' on;
+}
+
+@layer components {
+  .card {
+    @apply bg-gray-800/50 rounded-lg overflow-hidden border border-gray-700/50;
+  }
+
+  .card-header {
+    @apply p-4 bg-gray-800 border-b border-gray-700 flex items-center justify-between;
+  }
+
+  .card-title {
+    @apply text-xl font-bold;
+  }
+
+  .button-primary {
+    @apply px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-lg transition-colors font-medium flex items-center gap-2;
+  }
+
+  .button-secondary {
+    @apply px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors font-medium border border-blue-500/30 flex items-center gap-2;
+  }
+
+  .input-search {
+    @apply bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 pl-10 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+  }
+
+  .list-item {
+    @apply flex items-center p-4 hover:bg-gray-700/30 transition-colors border-b border-gray-700/50 last:border-b-0;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text;
+  }
+
+  .search-input {
+    @apply w-full bg-[#16181c] text-white rounded-full py-2 px-12 border-none focus:outline-none focus:ring-1 focus:ring-blue-500;
+  }
+
+  .player-row {
+    @apply flex items-center px-4 py-3 gap-3;
+  }
+
+  .player-row-even {
+    @apply bg-[#16181c];
+  }
+
+  .player-row-odd {
+    @apply bg-black/40;
+  }
+
+  .avatar {
+    @apply w-12 h-12 rounded-full bg-gray-800 overflow-hidden;
+  }
+
+  .player-name {
+    @apply font-bold text-white;
+  }
+
+  .player-score {
+    @apply text-green-400;
+  }
+
+  .bet-amount {
+    @apply text-blue-400 font-medium;
+  }
+
+  .bet-count {
+    @apply text-sm text-gray-400;
+  }
+
+  .earnings {
+    @apply text-green-400 font-medium;
+  }
+}
+
+@layer utilities {
+  .glass-effect {
+    @apply backdrop-blur-lg bg-white/5 border border-white/10;
+  }
+}

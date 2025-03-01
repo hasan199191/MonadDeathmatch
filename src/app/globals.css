@@ -1,0 +1,113 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #0a0a0a;
+  --foreground: #fafafa;
+  --card: #171717;
+  --card-foreground: #fafafa;
+  --popover: #171717;
+  --popover-foreground: #fafafa;
+  --primary: #2563eb;
+  --primary-foreground: #fafafa;
+  --secondary: #171717;
+  --secondary-foreground: #fafafa;
+  --muted: #262626;
+  --muted-foreground: #a3a3a3;
+  --accent: #262626;
+  --accent-foreground: #fafafa;
+  --destructive: #7f1d1d;
+  --destructive-foreground: #fafafa;
+  --border: #262626;
+  --input: #262626;
+  --ring: #2563eb;
+  --max-content-width: 100%; /* Maksimum genişlik sınırlaması kaldırıldı */
+}
+
+body {
+  margin: 0;
+  padding: 0;
+}
+
+.sidebar-menu-item {
+  @apply flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200;
+}
+
+.sidebar-menu-item:hover {
+  @apply bg-[#171717];
+}
+
+.sidebar-menu-item.active {
+  @apply bg-[#171717] text-white;
+}
+
+.card {
+  @apply bg-[#171717] rounded-lg border border-[#262626];
+}
+
+.container {
+  max-width: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.twitter-connected {
+  display: flex;
+  align-items: center;
+  background: rgba(29, 161, 242, 0.1);
+  border: 1px solid rgba(29, 161, 242, 0.3);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-top: 12px;
+  color: #1DA1F2;
+  font-weight: 500;
+}
+
+.user-list {
+  list-style: none;
+  padding: 0;
+  margin-top: 16px;
+}
+
+.user-item {
+  margin-bottom: 10px;
+  padding: 10px;
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+}
+
+.profile-image {
+  border-radius: 50%;
+  margin-right: 10px;
+  object-fit: cover;
+}
+
+.profile-placeholder {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #444;
+  margin-right: 10px;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.twitter-username {
+  color: #1DA1F2;
+  font-weight: 600;
+}
+
+.wallet-address {
+  font-size: 0.9em;
+  opacity: 0.7;
+}
