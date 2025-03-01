@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createPublicClient, http } from 'viem';
-import { monad } from 'viem/chains';
+import { monad } from '@/config/chains';
 import { MONAD_DEATHMATCH_ABI, MONAD_DEATHMATCH_ADDRESS } from '@/config/contracts';
 
-const client = createPublicClient({
-  chain: monad,
-  transport: http(),
-});
-
 export async function GET(request: NextRequest) {
+  const client = createPublicClient({
+    chain: monad,
+    transport: http(),
+  });
+
   const searchParams = request.nextUrl.searchParams;
   const poolId = searchParams.get('poolId');
   const address = searchParams.get('address');
