@@ -815,21 +815,3 @@ function Participants({ participants }) {
 }
 
 export default HomePage;
-
-export async function middleware(request: NextRequest) {
-  const token = await getToken({ req: request });
-  
-  if (request.nextUrl.pathname === "/home") {
-    if (!token) {
-      return NextResponse.redirect(new URL("/", request.url));
-    }
-  }
-
-  return NextResponse.next();
-}
-
-// Streaming için
-export const streaming = true
-
-// Revalidate için
-export const revalidate = 0
