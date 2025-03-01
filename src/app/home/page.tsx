@@ -26,15 +26,6 @@ import LoadingSkeleton from '@/components/LoadingSkeleton';
 import EliminatedPlayers from '@/components/EliminatedPlayers';
 import EliminationTimer from '@/components/EliminationTimer';
 
-// Metadata tanımı
-export const metadata = {
-  title: 'Home - Monad Deathmatch',
-  description: 'Join the ultimate battle for survival and glory'
-};
-
-// Dynamic rendering
-export const dynamic = 'force-dynamic';
-
 // 1. localStorage kullanarak bahisleri takip etmek için bir utils fonksiyonu oluşturun
 // Bu fonksiyon src/utils/bets.ts olarak kaydedilebilir
 const saveBetTypeToLocalStorage = (participant: string, betType: string) => {
