@@ -835,7 +835,7 @@
   dependencies:
     "@prisma/debug" "6.4.1"
 
-"@rainbow-me/rainbowkit@^1.3.0":
+"@rainbow-me/rainbowkit@1.3.0":
   version "1.3.0"
   resolved "https://registry.npmjs.org/@rainbow-me/rainbowkit/-/rainbowkit-1.3.0.tgz"
   integrity sha512-y5/JZIdYjqc84QFqKc1AhOHctnFC7quaDE3K8bueGfa0TgyrXcA6XgN3Dko530b3sxJJiTgvu2LxWlNUg8Felg==
@@ -1311,7 +1311,7 @@
     abitype "0.8.7"
     eventemitter3 "^4.0.7"
 
-"@wagmi/core@^1.4.13", "@wagmi/core@1.4.13":
+"@wagmi/core@1.4.13":
   version "1.4.13"
   resolved "https://registry.npmjs.org/@wagmi/core/-/core-1.4.13.tgz"
   integrity sha512-ytMCvXbBOgfDu9Qw67279wq/jNEe7EZLjLyekX7ROnvHRADqFr3lwZI6ih41UmtRZAmXAx8Ghyuqy154EjB5mQ==
@@ -5408,7 +5408,7 @@ valtio@1.11.2:
     proxy-compare "2.5.1"
     use-sync-external-store "1.2.0"
 
-viem@^1.0.0, viem@^1.19.11, viem@>=0.3.35, "viem@~0.3.19 || ^1.0.0":
+viem@^1.0.0, viem@>=0.3.35, "viem@~0.3.19 || ^1.0.0", viem@1.19.11:
   version "1.19.11"
   resolved "https://registry.npmjs.org/viem/-/viem-1.19.11.tgz"
   integrity sha512-dbsXEWDBZkByuzJXAs/e01j7dpUJ5ICF5WcyntFwf8Y97n5vnC/91lAleSa6DA5V4WJvYZbhDpYeTctsMAQnhA==
@@ -5436,7 +5436,7 @@ viem@^2.1.1:
     ox "0.6.7"
     ws "8.18.0"
 
-wagmi@^1.4.13, "wagmi@~1.0.1 || ~1.1.0 || ~1.2.0 || ~1.3.0 || ~1.4.0":
+"wagmi@~1.0.1 || ~1.1.0 || ~1.2.0 || ~1.3.0 || ~1.4.0", wagmi@1.4.13:
   version "1.4.13"
   resolved "https://registry.npmjs.org/wagmi/-/wagmi-1.4.13.tgz"
   integrity sha512-AScVYFjqNt1wMgL99Bob7MLdhoTZ3XKiOZL5HVBdy4W1sh7QodA3gQ8IsmTuUrQ7oQaTxjiXEhwg7sWNrPBvJA==
