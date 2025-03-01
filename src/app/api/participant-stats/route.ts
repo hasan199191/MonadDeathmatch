@@ -4,35 +4,35 @@ import { monad } from '@/config/chains';
 import { MONAD_DEATHMATCH_ABI, MONAD_DEATHMATCH_ADDRESS } from '@/config/contracts';
 
 export async function GET(request: NextRequest) {
-  const client = createPublicClient({
-    chain: monad,
-    transport: http(),
-  });
-
-  const searchParams = request.nextUrl.searchParams;
-  const poolId = searchParams.get('poolId');
-  const address = searchParams.get('address');
-
-  if (!poolId || !address) {
-    return NextResponse.json(
-      { error: 'Missing poolId or address' },
-      { status: 400 }
-    );
-  }
-
   try {
-    const stats = await client.readContract({
-      address: MONAD_DEATHMATCH_ADDRESS,
-      abi: MONAD_DEATHMATCH_ABI,
-      functionName: 'getParticipantStats',
-      args: [BigInt(poolId), address],
+    const { searchParams } = new URL(request.url);
+    const poolId = searchParams.get('poolId');
+
+    if (!poolId) {
+      return NextResponse.json(
+        { error: 'Pool ID gerekli' },
+        { status: 400 }
+      );
+    }
+
+    const client = createPublicClient({
+      chain: monad,
+      transport: http()
     });
 
-    return NextResponse.json(stats);
+    // Sadece poolId parametresi gönderiyoruz
+    const participants = await client.readContract({
+      address: MONAD_DEATHMATCH_ADDRESS,
+      abi: MONAD_DEATHMATCH_ABI,
+      functionName: 'getParticipants',
+      args: [BigInt(poolId)], // Tek parametre
+    });
+
+    return NextResponse.json({ participants });
   } catch (error) {
-    console.error('Error fetching participant stats:', error);
+    console.error('Katılımcı verileri alınamadı:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch participant stats' },
+      { error: 'Katılımcı verileri alınamadı' },
       { status: 500 }
     );
   }
