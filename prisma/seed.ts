@@ -1,23 +1,15 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../src/lib/prisma'
 
 async function main() {
-  // Test verilerini ekleyin
-  await prisma.user.create({
-    data: {
-      walletAddress: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
-      twitterUsername: 'test_user',
-      profileImageUrl: 'https://pbs.twimg.com/profile_images/default_profile.png',
-    },
-  });
+  // Seed verileriniz buraya gelecek
+  console.log('Veritabanı seed işlemi başladı...')
 }
 
 main()
   .catch((e) => {
-    console.error(e);
-    process.exit(1);
+    console.error('Seed hatası:', e)
+    process.exit(1)
   })
   .finally(async () => {
-    await prisma.$disconnect();
-  });
+    await prisma.$disconnect()
+  })
