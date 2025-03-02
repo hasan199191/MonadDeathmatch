@@ -75,15 +75,57 @@ export default function LandingPage() {
           {/* Connection Buttons */}
           <div className="flex flex-col items-center gap-4 max-w-md mx-auto mb-16">
             <div className="w-full">
-              <ConnectButton />
+              <ConnectButton.Custom>
+                {({
+                  account,
+                  chain,
+                  openConnectModal,
+                  mounted: rainbowKitMounted,
+                }) => {
+                  const ready = rainbowKitMounted;
+                  
+                  return (
+                    <div
+                      {...(!ready && {
+                        'aria-hidden': true,
+                        'style': {
+                          opacity: 0,
+                          pointerEvents: 'none',
+                          userSelect: 'none',
+                        },
+                      })}
+                      className="w-full"
+                    >
+                      {(() => {
+                        if (!ready || !account) {
+                          return (
+                            <button
+                              onClick={openConnectModal}
+                              className="w-full h-[48px] font-bold px-6 rounded-lg bg-[#8B5CF6] hover:bg-[#7C3AED] text-white transition-all duration-200 flex items-center justify-center"
+                            >
+                              Connect Wallet
+                            </button>
+                          );
+                        }
+
+                        return (
+                          <div className="w-full h-[48px] px-6 rounded-lg bg-green-600/20 border border-green-500 text-white font-bold flex items-center justify-center">
+                            ✓ Connected: {account.displayName}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  );
+                }}
+              </ConnectButton.Custom>
             </div>
 
             <button
               onClick={handleTwitterSignIn}
               disabled={!!session}
-              className={`w-full font-bold py-4 px-6 rounded-lg transition-all duration-200 flex items-center justify-center gap-2
+              className={`w-full h-[48px] font-bold px-6 rounded-lg transition-all duration-200 flex items-center justify-center gap-2
                 ${session 
-                  ? 'bg-green-600 text-white cursor-not-allowed opacity-75' 
+                  ? 'bg-green-600/20 border border-green-500 text-white cursor-not-allowed' 
                   : 'bg-[#8B5CF6] hover:bg-[#7C3AED] text-white'}`}
             >
               {session ? '✓ Connected with X' : 'Connect with X'}

@@ -4,10 +4,14 @@
 import { RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
 import '@rainbow-me/rainbowkit/styles.css';
 import { WagmiConfig } from 'wagmi';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, ReactNode } from 'react';
 import config, { chains } from '@/app/wagmi';
 
-export default function RainbowKitProviderWrapper({ children }) {
+interface RainbowKitProviderWrapperProps {
+  children: ReactNode;
+}
+
+export default function RainbowKitProviderWrapper({ children }: RainbowKitProviderWrapperProps) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -21,13 +25,12 @@ export default function RainbowKitProviderWrapper({ children }) {
       <RainbowKitProvider
         chains={chains}
         theme={darkTheme({
-          accentColor: '#8B5CF6', // Mor tema rengi
+          accentColor: '#8B5CF6',
           accentColorForeground: 'white',
-          borderRadius: 'medium',
-          fontStack: 'system',
+          borderRadius: 'large',
           overlayBlur: 'small'
         })}
-        modalSize="compact"
+        coolMode
       >
         {children}
       </RainbowKitProvider>
