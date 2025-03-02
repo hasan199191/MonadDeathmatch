@@ -83,15 +83,43 @@ const getBetTypeFromLocalStorage = (participant: string) => {
   }
 };
 
-const HomePage = () => {
-  const { data: session } = useSession();
-  const { address, isConnected } = useAccount();
+export default function HomePage() {
+  const { data: session, status } = useSession();
+  const { isConnected } = useAccount();
   const router = useRouter();
+
+  useEffect(() => {
+    if (status === 'loading') return;
+
+    const checkAuth = () => {
+      const walletConnected = localStorage.getItem('walletAddress');
+      
+      if (!session || !walletConnected || !isConnected) {
+        console.log('Auth check failed:', { session, walletConnected, isConnected });
+        router.replace('/');
+      }
+    };
+
+    checkAuth();
+  }, [status, session, isConnected, router]);
+
+  const [address, setAddress] = useState<string>('');
   const [betAmount, setBetAmount] = useState('');
   const [betType, setBetType] = useState<string>("top10"); // String olarak saklayın
   const [targetParticipant, setTargetParticipant] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [maxParticipants, setMaxParticipants] = useState<number | null>(null)
+  const [isWalletConnected, setIsWalletConnected] = useState(false);
+
+  useEffect(() => {
+    const savedAddress = localStorage.getItem('walletAddress');
+    if (!savedAddress || status === 'unauthenticated') {
+      router.replace('/');
+    } else {
+      setAddress(savedAddress);
+      setIsWalletConnected(true);
+    }
+  }, [status, router]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -105,7 +133,7 @@ const HomePage = () => {
   // Add this effect to link Twitter and wallet if both are connected
   useEffect(() => {
     const linkTwitterWithWallet = async () => {
-      if (session?.user && isConnected && address) {
+      if (session?.user && isWalletConnected && address) {
         try {
           await fetch('/api/user/connect-twitter', {
             method: 'POST',
@@ -113,18 +141,18 @@ const HomePage = () => {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              walletAddress: address,
-            }),
+              address: address,
+              twitterId: session.user.id
+            })
           });
-          console.log("Twitter account linked with wallet");
         } catch (error) {
-          console.error("Error linking Twitter with wallet:", error);
+          console.error('Error linking accounts:', error);
         }
       }
     };
-    
+
     linkTwitterWithWallet();
-  }, [session, isConnected, address]);
+  }, [session, address, isWalletConnected]);
 
   useEffect(() => {
     const connectTwitterWithWallet = async () => {
@@ -183,6 +211,15 @@ const HomePage = () => {
       })
     }
   }, [session, isConnected, router])
+
+  useEffect(() => {
+    // Session ve cüzdan kontrolü
+    if (!session || !isConnected) {
+      // Cookie'yi temizle
+      document.cookie = 'walletConnected=false; path=/;'
+      router.replace('/');
+    }
+  }, [session, isConnected, router]);
 
   // Contract state hooks
   const { data: poolInfo } = useContractRead({
@@ -881,5 +918,3 @@ function Participants({ participants }: ParticipantProps) {
     </div>
   );
 }
-
-export default HomePage;

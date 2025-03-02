@@ -6,15 +6,19 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ethers } from 'ethers';
 import type { ExternalProvider } from '@ethersproject/providers';
+import { useAccount } from 'wagmi';
 
 export default function HomePage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+  const { isConnected } = useAccount();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [address, setAddress] = useState<string>('');
   const [isConnecting, setIsConnecting] = useState(false);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [error, setError] = useState<string>('');
 
+<<<<<<< HEAD
   // Sayfa yüklendiğinde cüzdan kontrolü
   useEffect(() => {
     const checkWalletConnection = async () => {
@@ -64,6 +68,47 @@ export default function HomePage() {
 
     checkRedirect();
   }, [mounted, address, session, router]);
+=======
+  useEffect(() => {
+    setMounted(true);
+    const savedAddress = localStorage.getItem('walletAddress');
+    if (savedAddress) {
+      setAddress(savedAddress);
+    }
+    setIsLoadingAuth(false);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted || status === 'loading') return;
+
+    const checkAndRedirect = async () => {
+      if (address && session?.user) {
+        try {
+          await router.replace('/home');
+        } catch (error) {
+          console.error('Redirect error:', error);
+        }
+      }
+    };
+
+    checkAndRedirect();
+  }, [mounted, address, session, router, status]);
+
+  useEffect(() => {
+    if (status === 'loading') return;
+
+    const checkAuthAndRedirect = async () => {
+      const walletConnected = localStorage.getItem('walletAddress');
+      
+      if (session && walletConnected && isConnected) {
+        console.log('Redirecting to home:', { session, walletConnected, isConnected });
+        await router.push('/home');
+      }
+    };
+
+    checkAuthAndRedirect();
+  }, [status, session, isConnected, router]);
+>>>>>>> c408edef04a17a23be75118847985cfafafd483d
 
   const connectMetaMask = async () => {
     try {
@@ -71,7 +116,7 @@ export default function HomePage() {
       setError('');
 
       if (!window.ethereum) {
-        throw new Error('MetaMask is not installed!');
+        throw new Error('MetaMask yüklü değil!');
       }
 
       const provider = new ethers.providers.Web3Provider(
@@ -85,12 +130,19 @@ export default function HomePage() {
       // LocalStorage ve Cookie'ye kaydet
       setAddress(walletAddress);
       localStorage.setItem('walletAddress', walletAddress);
+<<<<<<< HEAD
       document.cookie = `walletAddress=${walletAddress}; path=/`;
 
       console.log('Wallet connected:', walletAddress);
 
       if (session) {
         console.log('Session exists, redirecting to home...');
+=======
+      document.cookie = 'walletConnected=true; path=/';
+
+      if (session?.user) {
+        console.log('Wallet connected, redirecting...', { walletAddress, session });
+>>>>>>> c408edef04a17a23be75118847985cfafafd483d
         await router.push('/home');
       }
 
@@ -104,6 +156,7 @@ export default function HomePage() {
 
   const handleTwitterSignIn = async () => {
     try {
+<<<<<<< HEAD
       if (address) {
         console.log('Wallet connected, proceeding with Twitter sign in');
         await signIn("twitter", { 
@@ -112,9 +165,26 @@ export default function HomePage() {
         });
       } else {
         await signIn("twitter", { redirect: true });
+=======
+      const walletConnected = localStorage.getItem('walletAddress');
+      
+      const result = await signIn("twitter", {
+        redirect: false,
+        callbackUrl: walletConnected ? '/home' : '/'
+      });
+
+      if (result?.error) {
+        setError('Twitter bağlantısı başarısız.');
+        return;
+      }
+
+      if (result?.ok && walletConnected) {
+        await router.push('/home');
+>>>>>>> c408edef04a17a23be75118847985cfafafd483d
       }
     } catch (error) {
       console.error('Twitter sign in error:', error);
+      setError('Twitter bağlantısı sırasında hata oluştu.');
     }
   };
 
