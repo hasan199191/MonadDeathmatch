@@ -85,8 +85,24 @@ const getBetTypeFromLocalStorage = (participant: string) => {
 
 export default function HomePage() {
   const { data: session, status } = useSession();
-  const { isConnected } = useAccount(); // Wagmi hook'unu ekleyin
+  const { isConnected } = useAccount();
   const router = useRouter();
+
+  useEffect(() => {
+    if (status === 'loading') return;
+
+    const checkAuth = () => {
+      const walletConnected = localStorage.getItem('walletAddress');
+      
+      if (!session || !walletConnected || !isConnected) {
+        console.log('Auth check failed:', { session, walletConnected, isConnected });
+        router.replace('/');
+      }
+    };
+
+    checkAuth();
+  }, [status, session, isConnected, router]);
+
   const [address, setAddress] = useState<string>('');
   const [betAmount, setBetAmount] = useState('');
   const [betType, setBetType] = useState<string>("top10"); // String olarak saklayın

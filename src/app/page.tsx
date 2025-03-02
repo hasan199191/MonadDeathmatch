@@ -6,9 +6,11 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ethers } from 'ethers';
 import type { ExternalProvider } from '@ethersproject/providers';
+import { useAccount } from 'wagmi';
 
 export default function HomePage() {
   const { data: session, status } = useSession();
+  const { isConnected } = useAccount();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [address, setAddress] = useState<string>('');
@@ -41,13 +43,28 @@ export default function HomePage() {
     checkAndRedirect();
   }, [mounted, address, session, router, status]);
 
+  useEffect(() => {
+    if (status === 'loading') return;
+
+    const checkAuthAndRedirect = async () => {
+      const walletConnected = localStorage.getItem('walletAddress');
+      
+      if (session && walletConnected && isConnected) {
+        console.log('Redirecting to home:', { session, walletConnected, isConnected });
+        await router.push('/home');
+      }
+    };
+
+    checkAuthAndRedirect();
+  }, [status, session, isConnected, router]);
+
   const connectMetaMask = async () => {
     try {
       setIsConnecting(true);
       setError('');
 
       if (!window.ethereum) {
-        throw new Error('MetaMask is not installed!');
+        throw new Error('MetaMask yüklü değil!');
       }
 
       const provider = new ethers.providers.Web3Provider(
@@ -60,12 +77,11 @@ export default function HomePage() {
       
       setAddress(walletAddress);
       localStorage.setItem('walletAddress', walletAddress);
-      
-      // Cüzdan bağlantı durumunu cookie'ye kaydet
-      document.cookie = 'walletConnected=true; path=/;'
+      document.cookie = 'walletConnected=true; path=/';
 
-      if (session) {
-        await router.replace('/home');
+      if (session?.user) {
+        console.log('Wallet connected, redirecting...', { walletAddress, session });
+        await router.push('/home');
       }
 
     } catch (error: any) {
@@ -78,13 +94,24 @@ export default function HomePage() {
 
   const handleTwitterSignIn = async () => {
     try {
-      await signIn("twitter", { redirect: true });
-      // Redirect if wallet is connected
-      if (address) {
-        router.push('/home');
+      const walletConnected = localStorage.getItem('walletAddress');
+      
+      const result = await signIn("twitter", {
+        redirect: false,
+        callbackUrl: walletConnected ? '/home' : '/'
+      });
+
+      if (result?.error) {
+        setError('Twitter bağlantısı başarısız.');
+        return;
+      }
+
+      if (result?.ok && walletConnected) {
+        await router.push('/home');
       }
     } catch (error) {
       console.error('Twitter sign in error:', error);
+      setError('Twitter bağlantısı sırasında hata oluştu.');
     }
   };
 
