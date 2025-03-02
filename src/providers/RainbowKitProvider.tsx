@@ -1,24 +1,31 @@
+// providers/RainbowKitProvider.tsx
 'use client';
 
-import { RainbowKitProvider } from '@rainbow-me/rainbowkit';
-import { WagmiConfig } from 'wagmi';
-import { useEffect, useState } from 'react';
-import { ReactNode } from 'react'; // ReactNode tipini import et
-import '@rainbow-me/rainbowkit/styles.css';
-import config, { chains } from '@/app/wagmi'; // Mevcut yapılandırmayı import et
+import { RainbowKitProvider, getDefaultWallets } from '@rainbow-me/rainbowkit';
+import { configureChains, createConfig, WagmiConfig } from 'wagmi';
+import { mainnet, polygon } from 'wagmi/chains';
+import { publicProvider } from 'wagmi/providers/public';
 
-// children prop'una ReactNode tipi ekle
-export default function RainbowKitProviderWrapper({ children }: { children: ReactNode }) {
-  const [mounted, setMounted] = useState(false);
+const { chains, publicClient } = configureChains(
+  [mainnet, polygon],
+  [publicProvider()]
+);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+const { connectors } = getDefaultWallets({
+  appName: 'Monad Deathmatch',
+  projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID!,
+  chains,
+});
 
-  if (!mounted) return null;
+const wagmiConfig = createConfig({
+  autoConnect: true,
+  connectors,
+  publicClient,
+});
 
+export default function RainbowKitProviderWrapper({ children }: { children: React.ReactNode }) {
   return (
-    <WagmiConfig config={config}>
+    <WagmiConfig config={wagmiConfig}>
       <RainbowKitProvider chains={chains}>
         {children}
       </RainbowKitProvider>

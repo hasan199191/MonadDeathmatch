@@ -1,3 +1,6 @@
+// components/Navbar.tsx
+'use client';
+
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
@@ -19,7 +22,7 @@ export const Navbar = () => {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0D0D0D]/80 backdrop-blur-sm border-b border-[#262626]">
       <div className="container mx-auto px-4 h-16">
         <div className="flex items-center justify-between h-full">
-          {/* Logo ve Menü */}
+          {/* Logo and Menu */}
           <div className="flex items-center gap-8">
             <Link href="/home" className="text-[#8B5CF6] font-bold text-xl">
               Monad Deathmatch
@@ -44,7 +47,7 @@ export const Navbar = () => {
             </div>
           </div>
           
-          {/* Cüzdan Durumu */}
+          {/* Wallet Status */}
           <div className="flex items-center gap-4">
             {isConnected ? (
               <div className="px-4 py-2 bg-[#8B5CF6]/20 border border-[#8B5CF6] rounded-lg text-white">
