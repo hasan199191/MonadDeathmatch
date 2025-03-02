@@ -13,11 +13,16 @@ export default function LandingPage() {
   const { address: wagmiAddress, isConnected } = useAccount();
   const hasRedirected = useRef(false);
   const [error, setError] = useState<string>('');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Twitter giriş işleyicisi
   const handleTwitterSignIn = async () => {
     try {
-      // Twitter bağlantısı için cüzdan kontrolü kaldırıldı
+      localStorage.removeItem('twitter_connected');
       console.log('Starting Twitter sign in...');
       await signIn('twitter', { 
         callbackUrl: '/', // Ana sayfaya değil, landing page'e dön
@@ -31,27 +36,35 @@ export default function LandingPage() {
 
   // Ana sayfaya yönlendirme mantığı
   useEffect(() => {
+    if (!mounted) return;
     if (status === 'loading') return;
     if (hasRedirected.current) return;
 
-    console.log('Auth Check:', { 
-      session: !!session, 
-      isConnected, 
-      hasRedirected: hasRedirected.current 
+    const isAuthenticated = session && isConnected;
+
+    console.log('Auth Status:', {
+      session: !!session,
+      isConnected,
+      hasRedirected: hasRedirected.current,
+      isAuthenticated
     });
 
-    // Her iki hesap da bağlıysa ana sayfaya yönlendir
-    if (session && isConnected) {
+    if (isAuthenticated) {
       hasRedirected.current = true;
-      console.log('Both accounts connected, redirecting to home...');
+      console.log('Both accounts verified, redirecting to home...');
       router.replace('/home');
     }
-  }, [isConnected, session, status, router]);
+  }, [mounted, isConnected, session, status, router]);
 
   // Bağlantı durumlarını hesapla
   const isTwitterConnected = !!session;
   const isWalletConnected = isConnected;
   const bothConnected = isTwitterConnected && isWalletConnected;
+
+  // Loading state
+  if (!mounted || status === 'loading') {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="min-h-screen relative bg-[#0D0D0D]">
