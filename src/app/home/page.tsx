@@ -106,6 +106,7 @@ export default function HomePage() {
     
     // Session yüklenene kadar bekle
     if (status === 'loading') return;
+    if (hasRedirected.current) return;
     
     console.log('HOME PAGE AUTH CHECK:', {
       session: !!session,
@@ -121,12 +122,13 @@ export default function HomePage() {
       setIsWalletConnected(true);
       
       // Cookie'yi güncelle
-      document.cookie = `walletAddress=${savedAddress}; path=/; max-age=86400`;
+      document.cookie = `walletAddress=${savedAddress}; path=/; max-age=86400; SameSite=Lax`;
     }
     
     // Sadece session veya cüzdan yoksa yönlendir
     if (!session || (!isConnected && !savedAddress)) {
       console.log('Missing auth, redirecting to landing page');
+      hasRedirected.current = true;
       router.replace('/');
     }
   }, [mounted, session, status, isConnected, router]);
@@ -204,25 +206,26 @@ export default function HomePage() {
   }, [session, address]);
 
   useEffect(() => {
-    if (!session || !isConnected) {
-      router.push('/')
-    } else {
-      const client = createPublicClient({
-        chain: monad,
-        transport: http()
-      })
-
-      client.readContract({
-        address: MONAD_DEATHMATCH_ADDRESS,
-        abi: MONAD_DEATHMATCH_ABI,
-        functionName: 'MAX_PARTICIPANTS',
-      }).then((result: bigint) => {
-        setMaxParticipants(Number(result))
-      }).catch((error) => {
-        console.error('Error fetching MAX_PARTICIPANTS:', error)
-      })
+    if (!session || !isWalletConnected) {
+      return; // Sadece erken çıkış, yönlendirme yok!
     }
-  }, [session, isConnected, router])
+    
+    // Diğer işlemleri yap...
+    const client = createPublicClient({
+      chain: monad,
+      transport: http()
+    });
+
+    client.readContract({
+      address: MONAD_DEATHMATCH_ADDRESS,
+      abi: MONAD_DEATHMATCH_ABI,
+      functionName: 'MAX_PARTICIPANTS',
+    }).then((result: bigint) => {
+      setMaxParticipants(Number(result))
+    }).catch((error) => {
+      console.error('Error fetching MAX_PARTICIPANTS:', error)
+    })
+  }, [session, isWalletConnected])
 
   // Contract state hooks
   const { data: poolInfo } = useContractRead({

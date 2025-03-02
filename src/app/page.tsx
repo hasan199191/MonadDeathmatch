@@ -13,46 +13,40 @@ export default function LandingPage() {
   const [mounted, setMounted] = useState(false);
   const [address, setAddress] = useState<string>('');
   const [isConnecting, setIsConnecting] = useState(false);
-  const [isRedirecting, setIsRedirecting] = useState(false);
   const [error, setError] = useState<string>('');
+  
+  // Yönlendirme kontrolü için ref - sadece bir kez yönlendirme yapılmasını sağlar
   const hasRedirected = useRef(false);
 
   // İlk yükleme kontrolü
   useEffect(() => {
     setMounted(true);
     
-    // LocalStorage'dan cüzdan kontrolü
     const savedAddress = localStorage.getItem('walletAddress');
     if (savedAddress) {
       setAddress(savedAddress);
-      // Cookie'ye de ekle (SameSite ekleyelim)
       document.cookie = `walletAddress=${savedAddress}; path=/; max-age=86400; SameSite=Lax`;
     }
   }, []);
 
-  // Yönlendirme kontrolü - yalnızca gerekli durumlarda
+  // Yönlendirme kontrolü - sadece bir kez çalışacak şekilde
   useEffect(() => {
-    // Sayfa yüklenmeden işlem yapma
+    // Erken çıkış durumları
     if (!mounted) return;
-    
-    // Session yüklenirken işlem yapma
     if (status === 'loading') return;
-    
-    // Daha önce yönlendirildiyse tekrar işlem yapma  
     if (hasRedirected.current) return;
     
     console.log('LANDING AUTH CHECK:', {
       session: !!session,
-      address: address,
-      hasRedirected: hasRedirected.current,
-      savedAddress: localStorage.getItem('walletAddress')
+      address,
+      hasRedirected: hasRedirected.current
     });
     
-    // Session ve wallet kontrolü
+    // Her iki hesap da bağlıysa yönlendir ve yönlendirme flag'ini ayarla
     if (session && address) {
-      console.log('LANDING: Both connected, redirecting to /home');
-      hasRedirected.current = true; // Yönlendirme yapıldığını işaretle
-      router.push('/home');
+      console.log('Both accounts connected, redirecting to /home');
+      hasRedirected.current = true;
+      router.replace('/home');
     }
   }, [mounted, session, address, status, router]);
 
@@ -72,17 +66,11 @@ export default function LandingPage() {
       const accounts = await provider.send("eth_requestAccounts", []);
       const walletAddress = accounts[0];
       
-      // State ve storage güncelle
       setAddress(walletAddress);
       localStorage.setItem('walletAddress', walletAddress);
-      
-      // Cookie'ye kaydederken doğru formatta olduğundan emin ol
       document.cookie = `walletAddress=${walletAddress}; path=/; max-age=86400; SameSite=Lax`;
       
-      console.log('WALLET CONNECTED:', {
-        address: walletAddress,
-        cookie: document.cookie.includes('walletAddress')
-      });
+      console.log('Wallet connected:', walletAddress);
 
     } catch (error: any) {
       console.error('Wallet connection error:', error);
