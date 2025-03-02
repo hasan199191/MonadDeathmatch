@@ -85,24 +85,23 @@ const getBetTypeFromLocalStorage = (participant: string) => {
 
 export default function HomePage() {
   const { data: session, status } = useSession();
-  const { isConnected } = useAccount();
   const router = useRouter();
-
+  const [mounted, setMounted] = useState(false);
+  
   useEffect(() => {
-    if (status === 'loading') return;
+    setMounted(true);
+  }, []);
 
-    const checkAuth = () => {
-      const walletConnected = localStorage.getItem('walletAddress');
-      
-      if (!session || !walletConnected || !isConnected) {
-        console.log('Auth check failed:', { session, walletConnected, isConnected });
-        router.replace('/');
-      }
-    };
+  // Bu sayfada yönlendirme kontrolü yapma!
+  // Middleware bunu hallediyor
 
-    checkAuth();
-  }, [status, session, isConnected, router]);
+  if (!mounted || status === 'loading') {
+    return <div>Loading...</div>;
+  }
 
+  // Normal sayfa içeriği...
+
+  const { isConnected } = useAccount();
   const [address, setAddress] = useState<string>('');
   const [betAmount, setBetAmount] = useState('');
   const [betType, setBetType] = useState<string>("top10"); // String olarak saklayın

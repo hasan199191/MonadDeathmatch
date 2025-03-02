@@ -6,61 +6,50 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ethers } from 'ethers';
 import type { ExternalProvider } from '@ethersproject/providers';
-import { useAccount } from 'wagmi';
 
-export default function HomePage() {
+export default function LandingPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [address, setAddress] = useState<string>('');
   const [isConnecting, setIsConnecting] = useState(false);
-  const [isAuthChecking, setIsAuthChecking] = useState(true);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const [error, setError] = useState<string>('');
 
-  // Cüzdan ve auth durumu kontrolü
+  // İlk yükleme kontrolü
   useEffect(() => {
-    const checkAuth = async () => {
+    setMounted(true);
+    
+    // LocalStorage'dan cüzdan kontrolü
+    const savedAddress = localStorage.getItem('walletAddress');
+    if (savedAddress) {
+      setAddress(savedAddress);
+      // Cookie'ye de ekle
+      document.cookie = `walletAddress=${savedAddress}; path=/`;
+    }
+  }, []);
+
+  // Yönlendirme kontrolü - yalnızca gerekli durumlarda
+  useEffect(() => {
+    // Sayfa yüklenmeden veya session durumu bilinmeden işlem yapma
+    if (!mounted || status === 'loading' || isRedirecting) return;
+    
+    const handleRedirect = async () => {
       try {
-        if (!mounted) {
-          setMounted(true);
-          return;
-        }
-
-        // Auth durumu yüklenene kadar bekle
-        if (status === 'loading') return;
-
-        const savedAddress = localStorage.getItem('walletAddress');
-        
-        if (window.ethereum) {
-          const provider = new ethers.providers.Web3Provider(window.ethereum as any);
-          const accounts = await provider.listAccounts();
-          
-          if (accounts.length > 0) {
-            setAddress(accounts[0]);
-            localStorage.setItem('walletAddress', accounts[0]);
-            document.cookie = `walletAddress=${accounts[0]}; path=/`;
-          }
-        }
-
-        console.log('Auth check:', {
-          session: session,
-          walletConnected: savedAddress,
-          status: status
-        });
-
-        // Her iki hesap da bağlıysa yönlendir
-        if (session && savedAddress) {
+        // Session ve wallet kontrolü
+        if (session && address) {
+          console.log('Both connected, redirecting to /home');
+          setIsRedirecting(true);
           await router.push('/home');
         }
       } catch (error) {
-        console.error('Auth check error:', error);
-      } finally {
-        setIsAuthChecking(false);
+        console.error('Redirect error:', error);
+        setIsRedirecting(false);
       }
     };
 
-    checkAuth();
-  }, [mounted, session, status, router]);
+    handleRedirect();
+  }, [mounted, session, address, status, router, isRedirecting]);
 
   const connectMetaMask = async () => {
     try {
@@ -80,13 +69,9 @@ export default function HomePage() {
       
       setAddress(walletAddress);
       localStorage.setItem('walletAddress', walletAddress);
-      document.cookie = `walletAddress=${walletAddress}; path=/`;
+      document.cookie = `walletAddress=${walletAddress}; path=/; max-age=86400`;
 
       console.log('Wallet connected:', walletAddress);
-
-      if (session) {
-        await router.push('/home');
-      }
 
     } catch (error: any) {
       console.error('Wallet connection error:', error);

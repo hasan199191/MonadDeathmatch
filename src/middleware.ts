@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
 export async function middleware(request: NextRequest) {
-  // Statik rotaları atla
+  // Middleware'i statik dosyalar için çalıştırma
   if (
     request.nextUrl.pathname.startsWith('/_next') ||
     request.nextUrl.pathname.includes('/api/auth') ||
@@ -19,14 +19,7 @@ export async function middleware(request: NextRequest) {
 
   const walletAddress = request.cookies.get('walletAddress')?.value;
 
-  // Debug için
-  console.log('Middleware check:', {
-    path: request.nextUrl.pathname,
-    hasToken: !!token,
-    hasWallet: !!walletAddress
-  });
-
-  // Sadece /home rotası için kontrol yap
+  // Sadece /home sayfasına erişim kontrolü
   if (request.nextUrl.pathname === '/home') {
     if (!token || !walletAddress) {
       return NextResponse.redirect(new URL('/', request.url));
@@ -38,6 +31,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!api/auth|_next/static|_next/image|favicon.ico).*)'
+    '/((?!_next/static|_next/image|favicon.ico|api/auth).*)',
   ],
 };
