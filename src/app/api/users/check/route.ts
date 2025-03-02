@@ -1,20 +1,19 @@
 import { NextResponse } from 'next/server';
-import sql from '../../../../../lib/database';
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
 
 export async function GET() {
   try {
-    const users = await sql`
-      SELECT 
-        "walletAddress",
-        "twitterUsername",
-        "twitterProfileImage",
-        "createdAt"
-      FROM users
-      WHERE 
-        "walletAddress" IS NOT NULL AND 
-        "twitterUsername" IS NOT NULL
-      ORDER BY "createdAt" DESC;
-    `;
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        walletAddress: true,
+        twitterUsername: true,
+        twitterProfileImage: true,
+        createdAt: true
+      }
+    });
 
     return NextResponse.json({
       success: true,

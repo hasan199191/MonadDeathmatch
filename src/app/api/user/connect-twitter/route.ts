@@ -1,29 +1,48 @@
-import { getServerSession } from "next-auth/next"
-import { NextResponse } from "next/server"
-import { authOptions } from "lib/auth"  // Doğru import yolu
-import { prisma } from "lib/prisma"  // Doğru import yolu
+import { NextResponse } from 'next/server';
+import sql from '../../../../../lib/database';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../../auth/[...nextauth]/route';
 
-export async function POST(req: Request) {
+export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions);
     if (!session) {
-      return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 })
+      return NextResponse.json({ error: 'Oturum bulunamadı' }, { status: 401 });
     }
 
-    const { walletAddress, twitterUsername, profileImageUrl } = await req.json()
+    const { walletAddress } = await request.json();
+    
+    // Kullanıcıyı güncelle veya oluştur
+    const user = await sql`
+      INSERT INTO users (
+        "walletAddress",
+        "twitterUsername",
+        "twitterId",
+        "twitterProfileImage",
+        "createdAt",
+        "updatedAt"
+      ) VALUES (
+        ${walletAddress},
+        ${session.user?.name},
+        ${session.user?.id},
+        ${session.user?.image},
+        NOW(),
+        NOW()
+      )
+      ON CONFLICT ("twitterId") DO UPDATE SET
+        "walletAddress" = ${walletAddress},
+        "twitterUsername" = ${session.user?.name},
+        "twitterProfileImage" = ${session.user?.image},
+        "updatedAt" = NOW()
+      RETURNING *;
+    `;
 
-    const user = await prisma.user.upsert({
-      where: { walletAddress },
-      update: { twitterUsername, profileImageUrl },
-      create: { walletAddress, twitterUsername, profileImageUrl }
-    })
-
-    return NextResponse.json({ success: true, user })
+    return NextResponse.json({ success: true, user: user[0] });
   } catch (error) {
-    console.error('Twitter bağlantı hatası:', error)
+    console.error('Bağlantı hatası:', error);
     return NextResponse.json(
-      { error: 'Twitter bağlantısı başarısız' }, 
+      { error: 'İşlem başarısız oldu' },
       { status: 500 }
-    )
+    );
   }
 }

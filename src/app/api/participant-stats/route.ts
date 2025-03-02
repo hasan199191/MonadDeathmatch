@@ -1,17 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createPublicClient, http } from 'viem';
-import { monad } from '@/config/chains';
-import { MONAD_DEATHMATCH_ABI, MONAD_DEATHMATCH_ADDRESS } from '@/config/contracts';
-import prisma from 'lib/prisma';
+import prisma from '@/lib/prisma';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const users = await prisma.user.findMany();
-    return NextResponse.json(users);
+    const users = await prisma.user.findMany({
+      where: {
+        AND: [
+          { walletAddress: { not: null } },
+          { twitterUsername: { not: null } }
+        ]
+      },
+      select: {
+        walletAddress: true,
+        twitterUsername: true,
+        twitterProfileImage: true,
+        createdAt: true
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    const stats = {
+      totalParticipants: users.length,
+      participants: users
+    };
+
+    return NextResponse.json(stats);
   } catch (error) {
-    console.error('Katılımcı verilerini getirirken hata:', error);
+    console.error('Stats error:', error);
     return NextResponse.json(
-      { error: 'Katılımcı verileri alınamadı' },
+      { error: 'İstatistikler getirilemedi' }, 
       { status: 500 }
     );
   }

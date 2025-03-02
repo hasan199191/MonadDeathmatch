@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
-import sql from '../../../../../lib/database';
+import sql from '../../../../lib/database';
 
 export async function GET() {
   try {
+    // Tüm kullanıcıları getir
     const users = await sql`
       SELECT 
         "walletAddress",
@@ -10,21 +11,20 @@ export async function GET() {
         "twitterProfileImage",
         "createdAt"
       FROM users
-      WHERE 
-        "walletAddress" IS NOT NULL AND 
-        "twitterUsername" IS NOT NULL
+      WHERE "walletAddress" IS NOT NULL 
+        AND "twitterUsername" IS NOT NULL
       ORDER BY "createdAt" DESC;
     `;
-
-    return NextResponse.json({
+    
+    return NextResponse.json({ 
       success: true,
       count: users.length,
       users
     });
   } catch (error) {
-    console.error('Veri getirme hatası:', error);
+    console.error('Kullanıcı verisi alınamadı:', error);
     return NextResponse.json(
-      { error: 'Kullanıcılar getirilemedi' },
+      { error: 'Kullanıcı verisi alınamadı' },
       { status: 500 }
     );
   }
