@@ -212,6 +212,28 @@ body {
          via-black/70 to-black;
 }
 
+/* Banner stilleri */
+.banner-image {
+  @apply fixed inset-0 w-full h-full object-cover opacity-30 select-none;
+  z-index: -1;
+}
+
+.banner-overlay {
+  @apply fixed inset-0 w-full h-full;
+  z-index: -1;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(13, 13, 13, 0.7) 50%,
+    #0D0D0D 100%
+  );
+}
+
+/* Ana içerik için z-index ayarı */
+.content-wrapper {
+  @apply relative z-20;
+}
+
 /* Button stilleri */
 .auth-button {
   @apply w-full px-6 py-3 rounded-lg font-medium transition-colors;

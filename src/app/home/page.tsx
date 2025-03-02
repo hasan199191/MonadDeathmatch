@@ -612,276 +612,292 @@ export default function HomePage() {
   }
 
   return (
-    <div className="container mx-auto px-4 pt-20">
-      <Navbar />
-      <main className="container mx-auto p-5 max-w-[1280px]"> {/* pt-6 ve lg:pt-10 değerlerini kaldırdık çünkü pt-16 yeterli */}
-        {/* Ana Grid Yapısı */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
-          {/* Sol Panel - 3 kolon */}
-          <div className="lg:col-span-3 space-y-5">
-            {/* Banner */}
-            <div className="relative h-32 rounded-xl overflow-hidden">
-              <Image
-                src="/Untitled (Outdoor Banner (72 in x 36 in)) (1).png"
-                alt="Monad Deathmatch Arena Banner"
-                fill
-                className="object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80">
-                <div className="p-4 flex items-end h-full">
-                  <div className="flex-1">
-                    <h1 className="text-xl font-bold text-white">Monad Deathmatch</h1>
-                    <p className="text-xs text-gray-300">Survival of the fittest</p>
+    <div className="min-h-screen relative bg-[#0D0D0D]">
+      {/* Banner Background */}
+      <div className="fixed inset-0 z-0">
+        <Image
+          src="/banner.png"
+          alt="Monad Deathmatch Banner"
+          fill
+          priority
+          quality={100}
+          className="banner-image"
+        />
+        <div className="banner-overlay" />
+      </div>
+
+      {/* Ana İçerik */}
+      <div className="relative z-20 container mx-auto px-4 pt-20">
+        <Navbar />
+        <main className="container mx-auto p-5 max-w-[1280px]"> {/* pt-6 ve lg:pt-10 değerlerini kaldırdık çünkü pt-16 yeterli */}
+          {/* Ana Grid Yapısı */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
+            {/* Sol Panel - 3 kolon */}
+            <div className="lg:col-span-3 space-y-5">
+              {/* Banner */}
+              <div className="relative h-32 rounded-xl overflow-hidden">
+                <Image
+                  src="/Untitled (Outdoor Banner (72 in x 36 in)) (1).png"
+                  alt="Monad Deathmatch Arena Banner"
+                  fill
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80">
+                  <div className="p-4 flex items-end h-full">
+                    <div className="flex-1">
+                      <h1 className="text-xl font-bold text-white">Monad Deathmatch</h1>
+                      <p className="text-xs text-gray-300">Survival of the fittest</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-gray-300">Players</p>
+                      <p className="text-lg font-bold text-white">
+                        {Number(poolInfo?.totalParticipants || 0)}/{maxParticipants?.toString() || '100'}
+                      </p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-xs text-gray-300">Players</p>
-                    <p className="text-lg font-bold text-white">
-                      {Number(poolInfo?.totalParticipants || 0)}/{maxParticipants?.toString() || '100'}
+                </div>
+              </div>
+
+              {/* Pool Info */}
+              <div className="bg-[#1A1A1A] p-4 rounded-xl">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                  <div className="space-y-1">
+                    <p className="text-xs text-gray-400">Phase</p>
+                    <p className="text-sm font-medium text-white">
+                      {poolInfo?.phase ? Number(poolInfo.phase) : '-'}
                     </p>
                   </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-gray-400">Prize Pool</p>
+                    <p className="text-sm font-medium text-[#8B5CF6]">
+                      {totalPrize} MON
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-gray-400">Total Bets</p>
+                    <p className="text-sm font-medium text-white">
+                      {formattedTotalBetAmount} MON
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-gray-400">Status</p>
+                    <p className={`text-sm font-medium ${
+                      poolInfo?.active ? 'text-[#8B5CF6]' : 'text-red-500'
+                    }`}>
+                      {poolInfo?.active ? 'Active' : 'Ended'}
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleJoin}
+                    disabled={isJoining || isUserParticipant}
+                    className="col-span-2 md:col-span-1 h-10 bg-[#8B5CF6] hover:bg-[#7C3AED] text-xs rounded-lg font-medium text-white disabled:opacity-50 disabled:bg-gray-600"
+                  >
+                    {isJoining ? 'Joining...' : isUserParticipant ? 'Joined ✓' : 'Join 1 MON'}
+                  </button>
                 </div>
               </div>
-            </div>
 
-            {/* Pool Info */}
-            <div className="bg-[#1A1A1A] p-4 rounded-xl">
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                <div className="space-y-1">
-                  <p className="text-xs text-gray-400">Phase</p>
-                  <p className="text-sm font-medium text-white">
-                    {poolInfo?.phase ? Number(poolInfo.phase) : '-'}
-                  </p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs text-gray-400">Prize Pool</p>
-                  <p className="text-sm font-medium text-[#8B5CF6]">
-                    {totalPrize} MON
-                  </p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs text-gray-400">Total Bets</p>
-                  <p className="text-sm font-medium text-white">
-                    {formattedTotalBetAmount} MON
-                  </p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs text-gray-400">Status</p>
-                  <p className={`text-sm font-medium ${
-                    poolInfo?.active ? 'text-[#8B5CF6]' : 'text-red-500'
-                  }`}>
-                    {poolInfo?.active ? 'Active' : 'Ended'}
-                  </p>
-                </div>
-                <button
-                  onClick={handleJoin}
-                  disabled={isJoining || isUserParticipant}
-                  className="col-span-2 md:col-span-1 h-10 bg-[#8B5CF6] hover:bg-[#7C3AED] text-xs rounded-lg font-medium text-white disabled:opacity-50 disabled:bg-gray-600"
-                >
-                  {isJoining ? 'Joining...' : isUserParticipant ? 'Joined ✓' : 'Join 1 MON'}
-                </button>
-              </div>
-            </div>
-
-            {/* Participants List */}
-            <div className="bg-[#1A1A1A] rounded-xl p-6">
-              <h2 className="text-lg font-semibold text-white mb-4">Participants</h2>
-              <div className="space-y-3">
-                {participants && participants.length > 0 ? (
-                  enrichedParticipants.map((participant, index) => (
-                    <div 
-                      key={participant.address} 
-                      className={`flex items-center justify-between p-4 rounded-lg transition-colors
-                        ${participant.isEliminated 
-                          ? 'bg-[#1A1A1A] opacity-50' 
-                          : 'bg-[#222222] hover:bg-[#2a2a2a]'
-                        }`}
-                    >
-                      {/* Kullanıcı bilgileri bölümü */}
-                      <div className="flex items-center gap-4">
-                        {/* Profil resmi */}
-                        {participant.profileImageUrl ? (
-                          <img 
-                            src={participant.profileImageUrl} 
-                            alt="X Profile"
-                            className="w-12 h-12 rounded-full object-cover border-2 border-[#333]"
-                          />
-                        ) : (
-                          <div className="w-12 h-12 bg-gray-600 rounded-full border-2 border-[#333]" />
-                        )}
-                        
-                        {/* Kullanıcı adı ve cüzdan adresi yan yana */}
-                        <div className="flex items-center gap-2">
-                          {participant.twitterUsername ? (
-                            <span className="text-lg text-blue-400 font-medium">
-                              @{participant.twitterUsername}
-                            </span>
+              {/* Participants List */}
+              <div className="bg-[#1A1A1A] rounded-xl p-6">
+                <h2 className="text-lg font-semibold text-white mb-4">Participants</h2>
+                <div className="space-y-3">
+                  {participants && participants.length > 0 ? (
+                    enrichedParticipants.map((participant, index) => (
+                      <div 
+                        key={participant.address} 
+                        className={`flex items-center justify-between p-4 rounded-lg transition-colors
+                          ${participant.isEliminated 
+                            ? 'bg-[#1A1A1A] opacity-50' 
+                            : 'bg-[#222222] hover:bg-[#2a2a2a]'
+                          }`}
+                      >
+                        {/* Kullanıcı bilgileri bölümü */}
+                        <div className="flex items-center gap-4">
+                          {/* Profil resmi */}
+                          {participant.profileImageUrl ? (
+                            <img 
+                              src={participant.profileImageUrl} 
+                              alt="X Profile"
+                              className="w-12 h-12 rounded-full object-cover border-2 border-[#333]"
+                            />
                           ) : (
-                            <span className="text-lg text-gray-400 font-medium">
-                              Anonymous
-                            </span>
+                            <div className="w-12 h-12 bg-gray-600 rounded-full border-2 border-[#333]" />
                           )}
                           
-                          <span className="text-base text-gray-400">
-                            {shortenAddress(participant.address)}
-                          </span>
-                          
-                          {participant.address.toLowerCase() === address?.toLowerCase() && (
-                            <span className="text-xs bg-[#8B5CF6] px-2 py-1 rounded text-white font-medium">
-                              YOU
+                          {/* Kullanıcı adı ve cüzdan adresi yan yana */}
+                          <div className="flex items-center gap-2">
+                            {participant.twitterUsername ? (
+                              <span className="text-lg text-blue-400 font-medium">
+                                @{participant.twitterUsername}
+                              </span>
+                            ) : (
+                              <span className="text-lg text-gray-400 font-medium">
+                                Anonymous
+                              </span>
+                            )}
+                            
+                            <span className="text-base text-gray-400">
+                              {shortenAddress(participant.address)}
                             </span>
-                          )}
+                            
+                            {participant.address.toLowerCase() === address?.toLowerCase() && (
+                              <span className="text-xs bg-[#8B5CF6] px-2 py-1 rounded text-white font-medium">
+                                YOU
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </div>
 
-                      {/* Bahis kontrolleri */}
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="number"
-                          step="0.1"
-                          min="0.1"
-                          max="10"
-                          value={betAmount}
-                          onChange={(e) => setBetAmount(e.target.value)}
-                          placeholder="0.1"
-                          className="w-24 bg-[#333333] text-base px-3 py-2 rounded-md text-white focus:ring-1 focus:ring-[#8B5CF6] transition-all"
-                        />
-                        
-                        <select
-                          value={betType}
-                          onChange={(e) => setBetType(e.target.value)}
-                          className="w-28 bg-[#333333] text-base px-3 py-2 rounded-md text-white focus:ring-1 focus:ring-[#8B5CF6] transition-all"
-                        >
-                          <option value="top10">Top 10</option>
-                          <option value="finalWinner">Final</option>
-                        </select>
-                        
-                        <button
-                          onClick={() => handleBet(participant.address)}
-                          disabled={isBetting || !betAmount || Number(betAmount) < 0.1}
-                          className="text-base px-6 py-2 bg-[#8B5CF6] hover:bg-[#7C3AED] rounded-md transition-all text-white font-medium disabled:bg-gray-600 disabled:opacity-50 min-w-[100px]"
-                        >
-                          {isBetting ? '...' : 'Bet'}
-                        </button>
+                        {/* Bahis kontrolleri */}
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="number"
+                            step="0.1"
+                            min="0.1"
+                            max="10"
+                            value={betAmount}
+                            onChange={(e) => setBetAmount(e.target.value)}
+                            placeholder="0.1"
+                            className="w-24 bg-[#333333] text-base px-3 py-2 rounded-md text-white focus:ring-1 focus:ring-[#8B5CF6] transition-all"
+                          />
+                          
+                          <select
+                            value={betType}
+                            onChange={(e) => setBetType(e.target.value)}
+                            className="w-28 bg-[#333333] text-base px-3 py-2 rounded-md text-white focus:ring-1 focus:ring-[#8B5CF6] transition-all"
+                          >
+                            <option value="top10">Top 10</option>
+                            <option value="finalWinner">Final</option>
+                          </select>
+                          
+                          <button
+                            onClick={() => handleBet(participant.address)}
+                            disabled={isBetting || !betAmount || Number(betAmount) < 0.1}
+                            className="text-base px-6 py-2 bg-[#8B5CF6] hover:bg-[#7C3AED] rounded-md transition-all text-white font-medium disabled:bg-gray-600 disabled:opacity-50 min-w-[100px]"
+                          >
+                            {isBetting ? '...' : 'Bet'}
+                          </button>
+                        </div>
+                        {participant.isEliminated && (
+                          <span className="text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded">
+                            Eliminated
+                          </span>
+                        )}
                       </div>
-                      {participant.isEliminated && (
-                        <span className="text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded">
-                          Eliminated
-                        </span>
-                      )}
+                    ))
+                  ) : (
+                    <div className="text-center text-gray-400 py-4 text-base">
+                      No participants in the arena yet.
                     </div>
-                  ))
-                ) : (
-                  <div className="text-center text-gray-400 py-4 text-base">
-                    No participants in the arena yet.
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Sağ Sidebar - 1 kolon */}
+            <div className="lg:col-span-1 space-y-5">
+              {/* Elimination Timer */}
+              <EliminationTimer />
+              
+              {/* Eliminated Players */}
+              <EliminatedPlayers />
+              
+              {/* My Stats */}
+              <div className="bg-[#1A1A1A] p-4 rounded-xl">
+                <h2 className="text-sm font-semibold text-white mb-2">My Stats</h2>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-gray-400">Status:</span>
+                    <span className={isUserParticipant ? 'text-[#8B5CF6]' : 'text-yellow-500'}>
+                      {isUserParticipant ? 'Participant' : 'Not Joined'}
+                    </span>
                   </div>
-                )}
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-gray-400">Balance:</span>
+                    <span className="text-white">
+                      {balance ? formatEther(balance.value) : '0'} MON
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* My Bets */}
+              <div className="bg-[#1A1A1A] p-4 rounded-xl">
+                <h2 className="text-sm font-semibold text-white mb-2">My Bets</h2>
+                <div className="space-y-2">
+                  {userBets && userBets.length > 0 ? userBets.map((bet, index) => (
+                    <div key={index} className="p-2 bg-[#222222] rounded-lg">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-white">{shortenAddress(bet.participant)}</span>
+                        <span className="text-[#8B5CF6]">{formatEther(bet.amount)} MON</span>
+                      </div>
+                      <div className="flex justify-between items-center mt-1 text-[10px] text-gray-400">
+                        <span>{bet.isActive ? 'Active' : 'Closed'}</span>
+                        <span>{new Date(Number(bet.timestamp) * 1000).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                  )) : (
+                    <div className="text-center text-gray-500 py-2 text-xs">
+                      No active bets
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Game Rules */}
+              <div className="bg-[#1A1A1A] p-4 rounded-xl">
+                <h2 className="text-sm font-semibold text-white mb-2">Game Rules</h2>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="p-2 bg-[#222222] rounded">
+                    <p className="text-gray-400">Entry Fee</p>
+                    <p className="text-white">1 MON</p>
+                  </div>
+                  <div className="p-2 bg-[#222222] rounded">
+                    <p className="text-gray-400">Min Bet</p>
+                    <p className="text-white">0.1 MON</p>
+                  </div>
+                  <div className="p-2 bg-[#222222] rounded">
+                    <p className="text-gray-400">Max Bet</p>
+                    <p className="text-white">10 MON</p>
+                  </div>
+                  <div className="p-2 bg-[#222222] rounded">
+                    <p className="text-gray-400">Daily Elim.</p>
+                    <p className="text-white">3 Players</p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Prize Distribution */}
+              <div className="bg-[#1A1A1A] p-4 rounded-xl">
+                <h2 className="text-sm font-semibold text-white mb-2">Prize Distribution</h2>
+                <div className="space-y-2">
+                  <div className="p-2 bg-[#222222] rounded text-xs">
+                    <p className="text-gray-400 mb-1">Pool Winners</p>
+                    <div className="grid grid-cols-3 gap-1">
+                      <div><span className="text-white">Lucky 1:</span> <span className="text-[#8B5CF6]">15%</span></div>
+                      <div><span className="text-white">Lucky 2:</span> <span className="text-[#8B5CF6]">15%</span></div>
+                      <div><span className="text-white">Lucky 3:</span> <span className="text-[#8B5CF6]">50%</span></div>
+                    </div>
+                  </div>
+                  <div className="p-2 bg-[#222222] rounded text-xs">
+                    <p className="text-gray-400 mb-1">Bet Rewards</p>
+                    <div className="grid grid-cols-2 gap-1">
+                      <div><span className="text-white">Top 10:</span> <span className="text-[#8B5CF6]">25%</span></div>
+                      <div><span className="text-white">Final:</span> <span className="text-[#8B5CF6]">50%</span></div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-
-          {/* Sağ Sidebar - 1 kolon */}
-          <div className="lg:col-span-1 space-y-5">
-            {/* Elimination Timer */}
-            <EliminationTimer />
-            
-            {/* Eliminated Players */}
-            <EliminatedPlayers />
-            
-            {/* My Stats */}
-            <div className="bg-[#1A1A1A] p-4 rounded-xl">
-              <h2 className="text-sm font-semibold text-white mb-2">My Stats</h2>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-gray-400">Status:</span>
-                  <span className={isUserParticipant ? 'text-[#8B5CF6]' : 'text-yellow-500'}>
-                    {isUserParticipant ? 'Participant' : 'Not Joined'}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-gray-400">Balance:</span>
-                  <span className="text-white">
-                    {balance ? formatEther(balance.value) : '0'} MON
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* My Bets */}
-            <div className="bg-[#1A1A1A] p-4 rounded-xl">
-              <h2 className="text-sm font-semibold text-white mb-2">My Bets</h2>
-              <div className="space-y-2">
-                {userBets && userBets.length > 0 ? userBets.map((bet, index) => (
-                  <div key={index} className="p-2 bg-[#222222] rounded-lg">
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="text-white">{shortenAddress(bet.participant)}</span>
-                      <span className="text-[#8B5CF6]">{formatEther(bet.amount)} MON</span>
-                    </div>
-                    <div className="flex justify-between items-center mt-1 text-[10px] text-gray-400">
-                      <span>{bet.isActive ? 'Active' : 'Closed'}</span>
-                      <span>{new Date(Number(bet.timestamp) * 1000).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-                )) : (
-                  <div className="text-center text-gray-500 py-2 text-xs">
-                    No active bets
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Game Rules */}
-            <div className="bg-[#1A1A1A] p-4 rounded-xl">
-              <h2 className="text-sm font-semibold text-white mb-2">Game Rules</h2>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="p-2 bg-[#222222] rounded">
-                  <p className="text-gray-400">Entry Fee</p>
-                  <p className="text-white">1 MON</p>
-                </div>
-                <div className="p-2 bg-[#222222] rounded">
-                  <p className="text-gray-400">Min Bet</p>
-                  <p className="text-white">0.1 MON</p>
-                </div>
-                <div className="p-2 bg-[#222222] rounded">
-                  <p className="text-gray-400">Max Bet</p>
-                  <p className="text-white">10 MON</p>
-                </div>
-                <div className="p-2 bg-[#222222] rounded">
-                  <p className="text-gray-400">Daily Elim.</p>
-                  <p className="text-white">3 Players</p>
-                </div>
-              </div>
-            </div>
-            
-            {/* Prize Distribution */}
-            <div className="bg-[#1A1A1A] p-4 rounded-xl">
-              <h2 className="text-sm font-semibold text-white mb-2">Prize Distribution</h2>
-              <div className="space-y-2">
-                <div className="p-2 bg-[#222222] rounded text-xs">
-                  <p className="text-gray-400 mb-1">Pool Winners</p>
-                  <div className="grid grid-cols-3 gap-1">
-                    <div><span className="text-white">Lucky 1:</span> <span className="text-[#8B5CF6]">15%</span></div>
-                    <div><span className="text-white">Lucky 2:</span> <span className="text-[#8B5CF6]">15%</span></div>
-                    <div><span className="text-white">Lucky 3:</span> <span className="text-[#8B5CF6]">50%</span></div>
-                  </div>
-                </div>
-                <div className="p-2 bg-[#222222] rounded text-xs">
-                  <p className="text-gray-400 mb-1">Bet Rewards</p>
-                  <div className="grid grid-cols-2 gap-1">
-                    <div><span className="text-white">Top 10:</span> <span className="text-[#8B5CF6]">25%</span></div>
-                    <div><span className="text-white">Final:</span> <span className="text-[#8B5CF6]">50%</span></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </main>
-      <iframe 
-        id="verify-api" 
-        src="https://verify.walletconnect.org/71c7dda23b92549b898f265e76af1221"
-        title="WalletConnect Verification"
-        style={{ display: 'none' }}
-      />
+        </main>
+        <iframe 
+          id="verify-api" 
+          src="https://verify.walletconnect.org/71c7dda23b92549b898f265e76af1221"
+          title="WalletConnect Verification"
+          style={{ display: 'none' }}
+        />
+      </div>
     </div>
   );
 };
