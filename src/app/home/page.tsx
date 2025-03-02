@@ -100,17 +100,17 @@ export default function HomePage() {
   useEffect(() => {
     if (!mounted) {
       setMounted(true);
-      return;
     }
     
     // Session yüklenene kadar bekle
     if (status === 'loading') return;
     
-    console.log('Home page auth check:', {
+    console.log('HOME PAGE AUTH CHECK:', {
       session: !!session,
       status,
-      isConnected,
-      savedAddress: localStorage.getItem('walletAddress')
+      address,
+      savedAddress: localStorage.getItem('walletAddress'),
+      cookies: document.cookie
     });
     
     const savedAddress = localStorage.getItem('walletAddress');

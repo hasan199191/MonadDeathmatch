@@ -31,14 +31,28 @@ export default function LandingPage() {
 
   // Yönlendirme kontrolü - yalnızca gerekli durumlarda
   useEffect(() => {
-    // Sayfa yüklenmeden veya session durumu bilinmeden işlem yapma
-    if (!mounted || status === 'loading' || isRedirecting) return;
+    // Sayfa yüklenmeden işlem yapma
+    if (!mounted) return;
+    
+    // Session yüklenirken işlem yapma
+    if (status === 'loading') return;
+    
+    // isRedirecting true ise tekrar yönlendirme yapma
+    if (isRedirecting) return;
+    
+    console.log('LANDING PAGE AUTH CHECK:', {
+      session: !!session,
+      address: address,
+      status,
+      cookies: document.cookie,
+      localStorage: localStorage.getItem('walletAddress')
+    });
     
     const handleRedirect = async () => {
       try {
         // Session ve wallet kontrolü
         if (session && address) {
-          console.log('Both connected, redirecting to /home');
+          console.log('LANDING: Both connected, redirecting to /home');
           setIsRedirecting(true);
           await router.push('/home');
         }
@@ -67,11 +81,17 @@ export default function LandingPage() {
       const accounts = await provider.send("eth_requestAccounts", []);
       const walletAddress = accounts[0];
       
+      // State ve storage güncelle
       setAddress(walletAddress);
       localStorage.setItem('walletAddress', walletAddress);
-      document.cookie = `walletAddress=${walletAddress}; path=/; max-age=86400`;
-
-      console.log('Wallet connected:', walletAddress);
+      
+      // Cookie'ye kaydederken doğru formatta olduğundan emin ol
+      document.cookie = `walletAddress=${walletAddress}; path=/; max-age=86400; SameSite=Lax`;
+      
+      console.log('WALLET CONNECTED:', {
+        address: walletAddress,
+        cookie: document.cookie.includes('walletAddress')
+      });
 
     } catch (error: any) {
       console.error('Wallet connection error:', error);
