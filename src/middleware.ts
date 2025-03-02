@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
 export async function middleware(request: NextRequest) {
-  // Statik dosyaları ve API rotalarını atla
+  // Statik dosyaları atla
   if (
     request.nextUrl.pathname.startsWith('/_next') ||
     request.nextUrl.pathname.includes('/api/auth') ||
@@ -14,7 +14,7 @@ export async function middleware(request: NextRequest) {
 
   console.log('Middleware PATH:', request.nextUrl.pathname);
   
-  // Sadece /home sayfası için kontrol yap
+  // Ana sayfa için auth kontrolü
   if (request.nextUrl.pathname === '/home') {
     const token = await getToken({ 
       req: request, 
@@ -23,14 +23,14 @@ export async function middleware(request: NextRequest) {
     
     const walletAddress = request.cookies.get('walletAddress')?.value;
     
-    console.log('Middleware auth check:', { 
-      hasToken: !!token, 
-      hasWallet: !!walletAddress,
-      cookies: request.cookies.getAll()
+    console.log('Middleware Check:', {
+      path: request.nextUrl.pathname,
+      hasToken: !!token,
+      hasWallet: !!walletAddress
     });
     
     if (!token || !walletAddress) {
-      console.log('Unauthorized access, redirecting to landing');
+      console.log('Unauthorized, redirecting to landing...');
       return NextResponse.redirect(new URL('/', request.url));
     }
   }

@@ -1,82 +1,39 @@
 'use client';
 
-import { signIn, useSession } from "next-auth/react";
-import Image from "next/image";
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef } from 'react';
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { ethers } from 'ethers';
-import type { ExternalProvider } from '@ethersproject/providers';
 import { useAccount } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 
 export default function LandingPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
-  const [address, setAddress] = useState<string>('');
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [error, setError] = useState<string>('');
   const { address: wagmiAddress, isConnected } = useAccount();
-  
-  // Yönlendirme kontrolü için ref - sadece bir kez yönlendirme yapılmasını sağlar
-  const hasRedirected = useRef(false);
+  const hasAttemptedRedirect = useRef(false);
 
-  // İlk yükleme kontrolü
-  useEffect(() => {
-    setMounted(true);
-    
-    const savedAddress = localStorage.getItem('walletAddress');
-    if (savedAddress) {
-      setAddress(savedAddress);
-      document.cookie = `walletAddress=${savedAddress}; path=/; max-age=86400; SameSite=Lax`;
-    }
-  }, []);
-
-  // Wagmi'den wallet durumunu takip et
-  useEffect(() => {
-    if (!mounted) {
-      setMounted(true);
-      return;
-    }
-    
-    if (isConnected && wagmiAddress) {
-      setAddress(wagmiAddress);
-      localStorage.setItem('walletAddress', wagmiAddress);
-      document.cookie = `walletAddress=${wagmiAddress}; path=/; max-age=86400; SameSite=Lax`;
-      console.log('Landing: Wallet connected through wagmi:', wagmiAddress);
-    } else {
-      const savedAddress = localStorage.getItem('walletAddress');
-      if (savedAddress) {
-        setAddress(savedAddress);
-        console.log('Landing: Using saved wallet address:', savedAddress);
-      }
-    }
-  }, [mounted, isConnected, wagmiAddress]);
-
-  // Yönlendirme kontrolü - sadece bir kez çalışacak şekilde
   useEffect(() => {
     // Erken çıkış durumları
-    if (!mounted) return;
     if (status === 'loading') return;
-    if (hasRedirected.current) return;
+    if (hasAttemptedRedirect.current) return;
     
-    console.log('LANDING AUTH CHECK:', {
+    console.log('Landing Page Auth Check:', {
       session: !!session,
-      address,
-      hasRedirected: hasRedirected.current
+      isConnected,
+      hasAttempted: hasAttemptedRedirect.current
     });
-    
-    // Her iki hesap da bağlıysa yönlendir ve yönlendirme flag'ini ayarla
-    if (session && address) {
-      console.log('Both accounts connected, redirecting to /home');
-      hasRedirected.current = true;
+
+    // Her iki hesap da bağlıysa yönlendir
+    if (session && isConnected) {
+      hasAttemptedRedirect.current = true;
+      console.log('Redirecting to home page...');
       router.replace('/home');
     }
-  }, [mounted, session, address, status, router]);
+  }, [session, status, isConnected, router]);
 
   const handleTwitterSignIn = async () => {
     try {
-      if (address) {
+      if (wagmiAddress) {
         console.log('Wallet connected, proceeding with Twitter sign in');
         await signIn("twitter", { 
           callbackUrl: '/home',
@@ -90,8 +47,6 @@ export default function LandingPage() {
       setError('Twitter bağlantısı sırasında hata oluştu.');
     }
   };
-
-  if (!mounted) return null;
 
   return (
     <div className="min-h-screen relative bg-[#0D0D0D]">

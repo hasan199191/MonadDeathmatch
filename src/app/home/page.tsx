@@ -96,6 +96,7 @@ export default function HomePage() {
   const [maxParticipants, setMaxParticipants] = useState<number | null>(null)
   const [isWalletConnected, setIsWalletConnected] = useState(false);
   const hasRedirected = useRef(false);
+  const hasAttemptedRedirect = useRef(false);
 
   // TEK BİR AUTH KONTROLÜ
   useEffect(() => {
@@ -482,7 +483,7 @@ export default function HomePage() {
               <span className="text-[#8B5CF6] ml-1 flex items-center">
                 Active
                 <svg className="w-3 h-3 ml-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path>
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 00-1.414 1.414l2 2a1 1 001.414 0l4-4z" clipRule="evenodd"></path>
                 </svg>
               </span>
             ) : (
@@ -573,6 +574,36 @@ export default function HomePage() {
       router.replace('/');
     }
   }, [isConnected, mounted, router]);
+
+  // Auth kontrolü
+  useEffect(() => {
+    // Erken çıkış durumları
+    if (status === 'loading') return;
+    if (hasAttemptedRedirect.current) return;
+    
+    console.log('Home Page Auth Check:', {
+      session: !!session,
+      isConnected,
+      hasAttempted: hasAttemptedRedirect.current
+    });
+
+    // Hesaplardan biri eksikse yönlendir
+    if (!session || !isConnected) {
+      hasAttemptedRedirect.current = true;
+      console.log('Missing auth, redirecting to landing page...');
+      router.replace('/');
+    }
+  }, [session, status, isConnected, router]);
+
+  // Yükleme durumu
+  if (status === 'loading') {
+    return <div>Loading...</div>;
+  }
+
+  // Auth eksikse içeriği gösterme
+  if (!session || !isConnected) {
+    return null;
+  }
 
   if (!mounted || !isConnected) return null;
 
