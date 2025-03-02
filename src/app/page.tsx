@@ -2,7 +2,7 @@
 
 import { signIn, useSession } from "next-auth/react";
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ethers } from 'ethers';
 import type { ExternalProvider } from '@ethersproject/providers';
@@ -15,6 +15,7 @@ export default function LandingPage() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [error, setError] = useState<string>('');
+  const hasRedirected = useRef(false);
 
   // İlk yükleme kontrolü
   useEffect(() => {
@@ -24,8 +25,8 @@ export default function LandingPage() {
     const savedAddress = localStorage.getItem('walletAddress');
     if (savedAddress) {
       setAddress(savedAddress);
-      // Cookie'ye de ekle
-      document.cookie = `walletAddress=${savedAddress}; path=/`;
+      // Cookie'ye de ekle (SameSite ekleyelim)
+      document.cookie = `walletAddress=${savedAddress}; path=/; max-age=86400; SameSite=Lax`;
     }
   }, []);
 
@@ -37,33 +38,23 @@ export default function LandingPage() {
     // Session yüklenirken işlem yapma
     if (status === 'loading') return;
     
-    // isRedirecting true ise tekrar yönlendirme yapma
-    if (isRedirecting) return;
+    // Daha önce yönlendirildiyse tekrar işlem yapma  
+    if (hasRedirected.current) return;
     
-    console.log('LANDING PAGE AUTH CHECK:', {
+    console.log('LANDING AUTH CHECK:', {
       session: !!session,
       address: address,
-      status,
-      cookies: document.cookie,
-      localStorage: localStorage.getItem('walletAddress')
+      hasRedirected: hasRedirected.current,
+      savedAddress: localStorage.getItem('walletAddress')
     });
     
-    const handleRedirect = async () => {
-      try {
-        // Session ve wallet kontrolü
-        if (session && address) {
-          console.log('LANDING: Both connected, redirecting to /home');
-          setIsRedirecting(true);
-          await router.push('/home');
-        }
-      } catch (error) {
-        console.error('Redirect error:', error);
-        setIsRedirecting(false);
-      }
-    };
-
-    handleRedirect();
-  }, [mounted, session, address, status, router, isRedirecting]);
+    // Session ve wallet kontrolü
+    if (session && address) {
+      console.log('LANDING: Both connected, redirecting to /home');
+      hasRedirected.current = true; // Yönlendirme yapıldığını işaretle
+      router.push('/home');
+    }
+  }, [mounted, session, address, status, router]);
 
   const connectMetaMask = async () => {
     try {

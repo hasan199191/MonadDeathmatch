@@ -95,11 +95,13 @@ export default function HomePage() {
   const [isMounted, setIsMounted] = useState(false);
   const [maxParticipants, setMaxParticipants] = useState<number | null>(null)
   const [isWalletConnected, setIsWalletConnected] = useState(false);
+  const hasRedirected = useRef(false);
 
   // TEK BİR AUTH KONTROLÜ
   useEffect(() => {
     if (!mounted) {
       setMounted(true);
+      return;
     }
     
     // Session yüklenene kadar bekle
