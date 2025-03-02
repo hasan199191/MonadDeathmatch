@@ -17,18 +17,10 @@ export default function LandingPage() {
   // Twitter giriş işleyicisi
   const handleTwitterSignIn = async () => {
     try {
-      if (!isConnected || !wagmiAddress) {
-        setError('Please connect your wallet first');
-        return;
-      }
-
-      // Wallet adresini localStorage'a kaydet
-      localStorage.setItem('walletAddress', wagmiAddress);
-      document.cookie = `walletAddress=${wagmiAddress}; path=/; max-age=86400; SameSite=Lax`;
-
+      // Twitter bağlantısı için cüzdan kontrolü kaldırıldı
       console.log('Starting Twitter sign in...');
       await signIn('twitter', { 
-        callbackUrl: '/home',
+        callbackUrl: '/', // Ana sayfaya değil, landing page'e dön
         redirect: true
       });
     } catch (err) {
@@ -37,7 +29,7 @@ export default function LandingPage() {
     }
   };
 
-  // Yönlendirme mantığı
+  // Ana sayfaya yönlendirme mantığı
   useEffect(() => {
     if (status === 'loading') return;
     if (hasRedirected.current) return;
@@ -48,12 +40,18 @@ export default function LandingPage() {
       hasRedirected: hasRedirected.current 
     });
 
+    // Her iki hesap da bağlıysa ana sayfaya yönlendir
     if (session && isConnected) {
       hasRedirected.current = true;
-      console.log('Redirecting to home...');
+      console.log('Both accounts connected, redirecting to home...');
       router.replace('/home');
     }
   }, [isConnected, session, status, router]);
+
+  // Bağlantı durumlarını hesapla
+  const isTwitterConnected = !!session;
+  const isWalletConnected = isConnected;
+  const bothConnected = isTwitterConnected && isWalletConnected;
 
   return (
     <div className="min-h-screen relative bg-[#0D0D0D]">
@@ -70,7 +68,6 @@ export default function LandingPage() {
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0D0D0D]/70 to-[#0D0D0D]" />
       </div>
 
-      {/* Content */}
       <div className="relative z-10 container mx-auto px-4 pt-32 md:pt-40">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
@@ -87,8 +84,26 @@ export default function LandingPage() {
             </div>
           )}
 
+          {/* Connection Status Banner */}
+          <div className="mb-8">
+            <div className="flex items-center justify-center gap-2 text-sm">
+              <div className={`px-3 py-1 rounded-full ${isTwitterConnected 
+                ? 'bg-green-500/20 text-green-300 border border-green-500' 
+                : 'bg-gray-800 text-gray-400'}`}>
+                X Account {isTwitterConnected ? '✓' : ''}
+              </div>
+              <div className="text-gray-500">+</div>
+              <div className={`px-3 py-1 rounded-full ${isWalletConnected 
+                ? 'bg-green-500/20 text-green-300 border border-green-500' 
+                : 'bg-gray-800 text-gray-400'}`}>
+                Wallet {isWalletConnected ? '✓' : ''}
+              </div>
+            </div>
+          </div>
+
           {/* Connection Buttons */}
           <div className="flex flex-col items-center gap-4 max-w-md mx-auto mb-16">
+            {/* Wallet Connect Button */}
             <div className="w-full">
               <ConnectButton.Custom>
                 {({
@@ -100,25 +115,18 @@ export default function LandingPage() {
                   const ready = rainbowKitMounted;
                   
                   return (
-                    <div
-                      {...(!ready && {
-                        'aria-hidden': true,
-                        'style': {
-                          opacity: 0,
-                          pointerEvents: 'none',
-                          userSelect: 'none',
-                        },
-                      })}
-                      className="w-full"
-                    >
+                    <div className="w-full">
                       {(() => {
                         if (!ready || !account) {
                           return (
                             <button
                               onClick={openConnectModal}
-                              className="w-full h-[48px] font-bold px-6 rounded-lg bg-[#8B5CF6] hover:bg-[#7C3AED] text-white transition-all duration-200 flex items-center justify-center"
+                              className={`w-full h-[48px] font-bold px-6 rounded-lg transition-all duration-200 flex items-center justify-center
+                                ${isWalletConnected 
+                                  ? 'bg-green-600/20 border border-green-500 text-white cursor-default' 
+                                  : 'bg-[#8B5CF6] hover:bg-[#7C3AED] text-white'}`}
                             >
-                              Connect Wallet
+                              {isWalletConnected ? '✓ Wallet Connected' : 'Connect Wallet'}
                             </button>
                           );
                         }
@@ -135,23 +143,31 @@ export default function LandingPage() {
               </ConnectButton.Custom>
             </div>
 
+            {/* Twitter Connect Button */}
             <button
               onClick={handleTwitterSignIn}
-              disabled={!isConnected || !!session}
+              disabled={isTwitterConnected}
               className={`w-full h-[48px] font-bold px-6 rounded-lg transition-all duration-200 flex items-center justify-center gap-2
-                ${!isConnected || !!session
-                  ? 'bg-gray-600 cursor-not-allowed opacity-50'
-                  : 'bg-[#8B5CF6] hover:bg-[#7C3AED]'} text-white`}
+                ${isTwitterConnected
+                  ? 'bg-green-600/20 border border-green-500 text-white cursor-default'
+                  : 'bg-[#8B5CF6] hover:bg-[#7C3AED] text-white'}`}
             >
-              {session ? '✓ Connected with X' : 'Connect with X'}
+              {isTwitterConnected ? '✓ X Account Connected' : 'Connect X Account'}
             </button>
 
-            {/* Status Messages */}
-            {!isConnected && (
-              <p className="text-blue-400 text-sm">Please connect your wallet first</p>
-            )}
-            {isConnected && !session && (
-              <p className="text-blue-400 text-sm">Now connect your Twitter account</p>
+            {/* Connection Guide Message */}
+            {!bothConnected && (
+              <div className="text-blue-400 text-sm">
+                {!isTwitterConnected && !isWalletConnected && (
+                  "Connect both your X account and wallet to continue"
+                )}
+                {isTwitterConnected && !isWalletConnected && (
+                  "Now connect your wallet to continue"
+                )}
+                {!isTwitterConnected && isWalletConnected && (
+                  "Now connect your X account to continue"
+                )}
+              </div>
             )}
           </div>
 
