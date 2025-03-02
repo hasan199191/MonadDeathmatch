@@ -15,20 +15,31 @@ export default function HomePage() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string>('');
 
-  // Check wallet connection on page load
+  // İlk useEffect - Sayfa yüklendiğinde çalışır
   useEffect(() => {
     setMounted(true);
+    // LocalStorage'dan cüzdan adresini kontrol et
     const savedAddress = localStorage.getItem('walletAddress');
     if (savedAddress) {
       setAddress(savedAddress);
+      console.log('Saved wallet address found:', savedAddress); // Debug için
     }
   }, []);
 
-  // Redirect when both accounts are connected
+  // İkinci useEffect - Bağlantı durumlarını kontrol eder
   useEffect(() => {
-    if (mounted && address && session) {
-      router.push('/home');
-    }
+    if (!mounted) return;
+
+    const checkAndRedirect = async () => {
+      console.log('Checking connections:', { address, session }); // Debug için
+
+      if (address && session) {
+        console.log('Both connected, redirecting to /home'); // Debug için
+        await router.push('/home');
+      }
+    };
+
+    checkAndRedirect();
   }, [mounted, address, session, router]);
 
   const connectMetaMask = async () => {
@@ -51,9 +62,12 @@ export default function HomePage() {
       setAddress(walletAddress);
       localStorage.setItem('walletAddress', walletAddress);
 
-      // Redirect if Twitter is connected
+      console.log('Wallet connected:', walletAddress); // Debug için
+
+      // Twitter bağlı ise hemen yönlendir
       if (session) {
-        router.push('/home');
+        console.log('Twitter already connected, redirecting...'); // Debug için
+        await router.push('/home');
       }
 
     } catch (error: any) {
