@@ -96,6 +96,7 @@ export default function HomePage() {
   const [maxParticipants, setMaxParticipants] = useState<number | null>(null)
   const [isWalletConnected, setIsWalletConnected] = useState(false);
   const hasRedirected = useRef(false);
+  const { address: wagmiAddress, isConnected } = useAccount(); // Wagmi hookunu ekleyin
 
   // TEK BİR AUTH KONTROLÜ
   useEffect(() => {

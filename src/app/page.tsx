@@ -6,6 +6,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ethers } from 'ethers';
 import type { ExternalProvider } from '@ethersproject/providers';
+import { useAccount } from 'wagmi';
 
 export default function LandingPage() {
   const { data: session, status } = useSession();
@@ -14,6 +15,7 @@ export default function LandingPage() {
   const [address, setAddress] = useState<string>('');
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string>('');
+  const { address: wagmiAddress, isConnected } = useAccount();
   
   // Yönlendirme kontrolü için ref - sadece bir kez yönlendirme yapılmasını sağlar
   const hasRedirected = useRef(false);
@@ -28,6 +30,27 @@ export default function LandingPage() {
       document.cookie = `walletAddress=${savedAddress}; path=/; max-age=86400; SameSite=Lax`;
     }
   }, []);
+
+  // Wagmi'den wallet durumunu takip et
+  useEffect(() => {
+    if (!mounted) {
+      setMounted(true);
+      return;
+    }
+    
+    if (isConnected && wagmiAddress) {
+      setAddress(wagmiAddress);
+      localStorage.setItem('walletAddress', wagmiAddress);
+      document.cookie = `walletAddress=${wagmiAddress}; path=/; max-age=86400; SameSite=Lax`;
+      console.log('Landing: Wallet connected through wagmi:', wagmiAddress);
+    } else {
+      const savedAddress = localStorage.getItem('walletAddress');
+      if (savedAddress) {
+        setAddress(savedAddress);
+        console.log('Landing: Using saved wallet address:', savedAddress);
+      }
+    }
+  }, [mounted, isConnected, wagmiAddress]);
 
   // Yönlendirme kontrolü - sadece bir kez çalışacak şekilde
   useEffect(() => {
