@@ -85,6 +85,7 @@ const getBetTypeFromLocalStorage = (participant: string) => {
 
 export default function HomePage() {
   const { data: session, status } = useSession();
+  const { isConnected } = useAccount(); // Wagmi hook'unu ekleyin
   const router = useRouter();
   const [address, setAddress] = useState<string>('');
   const [betAmount, setBetAmount] = useState('');
