@@ -24,25 +24,35 @@ export const Navbar = () => {
             <Link href="/home" className="text-[#8B5CF6] font-bold text-xl">
               Monad Deathmatch
             </Link>
-            <div className="flex items-center gap-6">
-              <Link 
-                href="/home" 
-                className={`navbar-link ${pathname === '/home' ? 'navbar-link-active' : ''}`}
-              >
-                Home
-              </Link>
+            <div className="hidden md:flex items-center gap-6">
               <Link 
                 href="/rules" 
-                className={`navbar-link ${pathname === '/rules' ? 'navbar-link-active' : ''}`}
+                className={`text-gray-300 hover:text-[#8B5CF6] transition-colors ${
+                  pathname === '/rules' ? 'text-[#8B5CF6]' : ''
+                }`}
               >
                 Rules
+              </Link>
+              <Link 
+                href="/home" 
+                className={`text-gray-300 hover:text-[#8B5CF6] transition-colors ${
+                  pathname === '/home' ? 'text-[#8B5CF6]' : ''
+                }`}
+              >
+                Home
               </Link>
             </div>
           </div>
           
           {/* Cüzdan Durumu */}
           <div className="flex items-center gap-4">
-            <ConnectButton />
+            {isConnected ? (
+              <div className="px-4 py-2 bg-[#8B5CF6]/20 border border-[#8B5CF6] rounded-lg text-white">
+                {wagmiAddress?.slice(0, 6)}...{wagmiAddress?.slice(-4)}
+              </div>
+            ) : (
+              <ConnectButton />
+            )}
           </div>
         </div>
       </div>

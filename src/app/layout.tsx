@@ -16,15 +16,15 @@ interface RootLayoutProps {
 
 export default function RootLayout({ children }: RootLayoutProps) {
   const pathname = usePathname();
-  const showNavbar = pathname !== '/'; // Landing page'de navbar'ı gizle
+  const showNavbar = pathname !== '/'; // Ana sayfada navbar'ı gizle
 
   return (
     <html lang="en">
-      <body className={`${plusJakartaSans.className} bg-[#0D0D0D] min-h-screen`}>
+      <body className={`${plusJakartaSans.className} bg-[#0D0D0D] text-white`}>
         <SessionProvider>
           <RainbowKitProviderWrapper>
-            {showNavbar && <Navbar />}
-            <main className={`${showNavbar ? "pt-16" : ""} text-white`}>
+            {showNavbar && <Navbar />} {/* Koşullu render */}
+            <main className={showNavbar ? "pt-16" : ""}>
               {children}
             </main>
           </RainbowKitProviderWrapper>
