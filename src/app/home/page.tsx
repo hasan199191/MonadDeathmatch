@@ -87,7 +87,7 @@ export default function HomePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  const { isConnected } = useAccount();
+  const { address: wagmiAddress, isConnected: isWagmiConnected } = useAccount(); // Wagmi hookunu ekleyin
   const [address, setAddress] = useState<string>('');
   const [betAmount, setBetAmount] = useState('');
   const [betType, setBetType] = useState<string>("top10"); // String olarak saklayın
@@ -96,7 +96,6 @@ export default function HomePage() {
   const [maxParticipants, setMaxParticipants] = useState<number | null>(null)
   const [isWalletConnected, setIsWalletConnected] = useState(false);
   const hasRedirected = useRef(false);
-  const { address: wagmiAddress, isConnected } = useAccount(); // Wagmi hookunu ekleyin
 
   // TEK BİR AUTH KONTROLÜ
   useEffect(() => {
@@ -127,12 +126,12 @@ export default function HomePage() {
     }
     
     // Sadece session veya cüzdan yoksa yönlendir
-    if (!session || (!isConnected && !savedAddress)) {
+    if (!session || (!isWagmiConnected && !savedAddress)) {
       console.log('Missing auth, redirecting to landing page');
       hasRedirected.current = true;
       router.replace('/');
     }
-  }, [mounted, session, status, isConnected, router]);
+  }, [mounted, session, status, isWagmiConnected, router]);
   
   // DİĞER useEffect'lerdeki REDIRECT KODLARINI KALDIRIN
   
@@ -288,7 +287,7 @@ export default function HomePage() {
     functionName: 'joinPool',
     args: [BigInt(1)],
     value: parseEther('1'),
-    enabled: isConnected && !isUserParticipant, // isUserParticipant kullan
+    enabled: isWagmiConnected && !isUserParticipant, // isUserParticipant kullan
   });
 
   const { write: joinPool, isLoading: isJoining, data: joinTx } = useContractWrite(joinConfig);
@@ -335,7 +334,7 @@ export default function HomePage() {
 
   // DÜZELTME 3: handleBet fonksiyonunu düzeltiyoruz
   const handleBet = useCallback((participant: string) => {
-    if (!isConnected) {
+    if (!isWagmiConnected) {
       toast.error('Please connect your wallet first');
       return;
     }
@@ -366,11 +365,11 @@ export default function HomePage() {
         toast.error('Failed to place bet');
       }
     }, 100);
-  }, [isConnected, betAmount, betType, placeBet]);
+  }, [isWagmiConnected, betAmount, betType, placeBet]);
 
   // handleJoin fonksiyonu
   const handleJoin = useCallback(() => {
-    if (!isConnected) {
+    if (!isWagmiConnected) {
       toast.error('Please connect your wallet first');
       return;
     }
@@ -393,7 +392,7 @@ export default function HomePage() {
       console.error('Join error:', error);
       toast.error('Failed to join pool');
     }
-  }, [isConnected, isUserParticipant, balance, joinPool]);
+  }, [isWagmiConnected, isUserParticipant, balance, joinPool]);
 
   // Calculated values - totalPrize hesaplamasını güncelliyoruz
   const totalPrize = useMemo(() => {
