@@ -3,10 +3,12 @@
 import { RainbowKitProvider } from '@rainbow-me/rainbowkit';
 import { WagmiConfig } from 'wagmi';
 import { useEffect, useState } from 'react';
+import { ReactNode } from 'react'; // ReactNode tipini import et
 import '@rainbow-me/rainbowkit/styles.css';
 import config, { chains } from '@/app/wagmi'; // Mevcut yapılandırmayı import et
 
-export default function RainbowKitProviderWrapper({ children }) {
+// children prop'una ReactNode tipi ekle
+export default function RainbowKitProviderWrapper({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
