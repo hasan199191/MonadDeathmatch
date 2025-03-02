@@ -1,3 +1,4 @@
+// app/page.tsx
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
@@ -19,56 +20,52 @@ export default function LandingPage() {
     setMounted(true);
   }, []);
 
-  // Twitter giriş işleyicisi
+  // Cüzdan adresini kaydet
+  useEffect(() => {
+    if (isConnected && wagmiAddress) {
+      localStorage.setItem('walletAddress', wagmiAddress);
+      document.cookie = `walletAddress=${wagmiAddress}; path=/; max-age=86400; SameSite=Lax`;
+    }
+  }, [isConnected, wagmiAddress]);
+
+  // Twitter bağlantısı
   const handleTwitterSignIn = async () => {
     try {
-      localStorage.removeItem('twitter_connected');
-      console.log('Starting Twitter sign in...');
       await signIn('twitter', { 
-        callbackUrl: '/', // Ana sayfaya değil, landing page'e dön
-        redirect: true
+        callbackUrl: '/', 
+        redirect: true 
       });
     } catch (err) {
-      console.error('Twitter sign in error:', err);
-      setError('Failed to connect with Twitter');
+      console.error('Twitter connection error:', err);
+      setError('X connection failed');
     }
   };
 
-  // Ana sayfaya yönlendirme mantığı
+  // Yönlendirme kontrolü
   useEffect(() => {
-    if (!mounted) return;
-    if (status === 'loading') return;
-    if (hasRedirected.current) return;
-
-    const isAuthenticated = session && isConnected;
-
-    console.log('Auth Status:', {
-      session: !!session,
-      isConnected,
-      hasRedirected: hasRedirected.current,
-      isAuthenticated
-    });
-
-    if (isAuthenticated) {
+    if (!mounted || status === 'loading' || hasRedirected.current) return;
+    
+    if (session && isConnected) {
       hasRedirected.current = true;
-      console.log('Both accounts verified, redirecting to home...');
       router.replace('/home');
     }
-  }, [mounted, isConnected, session, status, router]);
+  }, [mounted, session, isConnected, status, router]);
 
-  // Bağlantı durumlarını hesapla
+  // Durumlar
   const isTwitterConnected = !!session;
   const isWalletConnected = isConnected;
-  const bothConnected = isTwitterConnected && isWalletConnected;
 
-  // Loading state
   if (!mounted || status === 'loading') {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center">
+        <div className="text-2xl text-white">Loading...</div>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen relative bg-[#0D0D0D]">
-      {/* Banner Background */}
+      {/* Arkaplan */}
       <div className="absolute inset-0 z-0">
         <Image
           src="/banner.png"
@@ -81,136 +78,84 @@ export default function LandingPage() {
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0D0D0D]/70 to-[#0D0D0D]" />
       </div>
 
+      {/* Ana İçerik */}
       <div className="relative z-10 container mx-auto px-4 pt-32 md:pt-40">
         <div className="max-w-4xl mx-auto text-center">
+          {/* Başlık */}
           <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
             Monad Deathmatch
           </h1>
           <p className="text-xl md:text-2xl text-gray-300 mb-12">
-            Join the ultimate battle for survival and glory
+            Ultimate survival competition on blockchain
           </p>
 
-          {/* Error Message */}
+          {/* Hata Mesajı */}
           {error && (
-            <div className="mb-4 p-3 bg-red-500/20 border border-red-500 rounded-lg text-red-100">
+            <div className="mb-6 p-4 bg-red-500/20 border border-red-500 rounded-xl text-red-100">
               {error}
             </div>
           )}
 
-          {/* Connection Status Banner */}
-          <div className="mb-8">
-            <div className="flex items-center justify-center gap-2 text-sm">
-              <div className={`px-3 py-1 rounded-full ${isTwitterConnected 
-                ? 'bg-green-500/20 text-green-300 border border-green-500' 
-                : 'bg-gray-800 text-gray-400'}`}>
-                X Account {isTwitterConnected ? '✓' : ''}
-              </div>
-              <div className="text-gray-500">+</div>
-              <div className={`px-3 py-1 rounded-full ${isWalletConnected 
-                ? 'bg-green-500/20 text-green-300 border border-green-500' 
-                : 'bg-gray-800 text-gray-400'}`}>
-                Wallet {isWalletConnected ? '✓' : ''}
-              </div>
+          {/* Durum Göstergeleri */}
+          <div className="flex justify-center gap-4 mb-8">
+            <div className={`status-badge ${isTwitterConnected ? 'connected' : ''}`}>
+              X Account {isTwitterConnected ? '✓' : '✗'}
+            </div>
+            <div className={`status-badge ${isWalletConnected ? 'connected' : ''}`}>
+              Wallet {isWalletConnected ? '✓' : '✗'}
             </div>
           </div>
 
-          {/* Connection Buttons */}
+          {/* Bağlantı Butonları */}
           <div className="flex flex-col items-center gap-4 max-w-md mx-auto mb-16">
-            {/* Wallet Connect Button */}
+            {/* Cüzdan Butonu */}
             <div className="w-full">
               <ConnectButton.Custom>
-                {({
-                  account,
-                  chain,
-                  openConnectModal,
-                  mounted: rainbowKitMounted,
-                }) => {
-                  const ready = rainbowKitMounted;
-                  
-                  return (
-                    <div className="w-full">
-                      {(() => {
-                        if (!ready || !account) {
-                          return (
-                            <button
-                              onClick={openConnectModal}
-                              className={`w-full h-[48px] font-bold px-6 rounded-lg transition-all duration-200 flex items-center justify-center
-                                ${isWalletConnected 
-                                  ? 'bg-green-600/20 border border-green-500 text-white cursor-default' 
-                                  : 'bg-[#8B5CF6] hover:bg-[#7C3AED] text-white'}`}
-                            >
-                              {isWalletConnected ? '✓ Wallet Connected' : 'Connect Wallet'}
-                            </button>
-                          );
-                        }
-
-                        return (
-                          <div className="w-full h-[48px] px-6 rounded-lg bg-green-600/20 border border-green-500 text-white font-bold flex items-center justify-center">
-                            ✓ Connected: {account.displayName}
-                          </div>
-                        );
-                      })()}
-                    </div>
-                  );
-                }}
+                {({ openConnectModal }) => (
+                  <button
+                    onClick={openConnectModal}
+                    className={`connection-btn ${isWalletConnected ? 'connected' : ''}`}
+                  >
+                    {isWalletConnected ? 'Wallet Connected' : 'Connect Wallet'}
+                  </button>
+                )}
               </ConnectButton.Custom>
             </div>
 
-            {/* Twitter Connect Button */}
+            {/* X Butonu */}
             <button
               onClick={handleTwitterSignIn}
+              className={`connection-btn ${isTwitterConnected ? 'connected' : ''}`}
               disabled={isTwitterConnected}
-              className={`w-full h-[48px] font-bold px-6 rounded-lg transition-all duration-200 flex items-center justify-center gap-2
-                ${isTwitterConnected
-                  ? 'bg-green-600/20 border border-green-500 text-white cursor-default'
-                  : 'bg-[#8B5CF6] hover:bg-[#7C3AED] text-white'}`}
             >
-              {isTwitterConnected ? '✓ X Account Connected' : 'Connect X Account'}
+              {isTwitterConnected ? 'X Account Connected' : 'Connect X Account'}
             </button>
 
-            {/* Connection Guide Message */}
-            {!bothConnected && (
-              <div className="text-blue-400 text-sm">
-                {!isTwitterConnected && !isWalletConnected && (
-                  "Connect both your X account and wallet to continue"
-                )}
-                {isTwitterConnected && !isWalletConnected && (
-                  "Now connect your wallet to continue"
-                )}
-                {!isTwitterConnected && isWalletConnected && (
-                  "Now connect your X account to continue"
-                )}
+            {/* Yönlendirme Mesajı */}
+            {!(isTwitterConnected && isWalletConnected) && (
+              <div className="text-blue-400 text-sm mt-2">
+                {!isTwitterConnected && !isWalletConnected && "Connect both to enter"}
+                {isTwitterConnected && !isWalletConnected && "Connect your wallet"}
+                {!isTwitterConnected && isWalletConnected && "Connect your X account"}
               </div>
             )}
           </div>
 
-          {/* Features Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            <div className="bg-black/30 backdrop-blur-sm p-6 rounded-xl border border-gray-800">
-              <h3 className="text-xl font-bold text-white mb-2">
-                Daily Eliminations
-              </h3>
-              <p className="text-gray-400">
-                3 players eliminated daily until the final survivor emerges
-              </p>
+          {/* Özellikler Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="feature-card">
+              <h3 className="text-xl font-bold text-white mb-3">Daily Battles</h3>
+              <p className="text-gray-400">3 players eliminated every 24 hours</p>
             </div>
             
-            <div className="bg-black/30 backdrop-blur-sm p-6 rounded-xl border border-gray-800">
-              <h3 className="text-xl font-bold text-white mb-2">
-                Massive Prize Pool
-              </h3>
-              <p className="text-gray-400">
-                Win up to 50% of the total prize pool as the final survivor
-              </p>
+            <div className="feature-card">
+              <h3 className="text-xl font-bold text-white mb-3">Massive Rewards</h3>
+              <p className="text-gray-400">50% of total pool to final survivor</p>
             </div>
             
-            <div className="bg-black/30 backdrop-blur-sm p-6 rounded-xl border border-gray-800">
-              <h3 className="text-xl font-bold text-white mb-2">
-                Place Your Bets
-              </h3>
-              <p className="text-gray-400">
-                Bet on players and earn additional rewards
-              </p>
+            <div className="feature-card">
+              <h3 className="text-xl font-bold text-white mb-3">Live Betting</h3>
+              <p className="text-gray-400">Predict outcomes and earn bonuses</p>
             </div>
           </div>
         </div>

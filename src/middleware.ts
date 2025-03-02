@@ -1,41 +1,35 @@
-// middleware.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
 export async function middleware(request: NextRequest) {
-  // Skip static files and API routes
+  const path = request.nextUrl.pathname;
+  
+  // Önbelleklenmiş dosyaları atla
   if (
-    request.nextUrl.pathname.startsWith('/_next') ||
-    request.nextUrl.pathname.includes('/api/auth') ||
-    request.nextUrl.pathname.includes('.')
+    path.startsWith('/_next') || 
+    path.includes('/api/auth') || 
+    path.includes('.')
   ) {
     return NextResponse.next();
   }
 
-  console.log('Middleware Path:', request.nextUrl.pathname);
-
   // Auth gerektiren rotalar
-  const authRequiredPaths = ['/home'];
+  const protectedRoutes = ['/home'];
   
-  if (authRequiredPaths.includes(request.nextUrl.pathname)) {
+  if (protectedRoutes.includes(path)) {
     try {
-      const token = await getToken({ 
-        req: request, 
-        secret: process.env.NEXTAUTH_SECRET 
-      });
-
+      const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
       const walletAddress = request.cookies.get('walletAddress')?.value;
 
-      console.log('Middleware Auth Check:', {
-        path: request.nextUrl.pathname,
+      console.log('Middleware Check:', {
+        path,
         hasToken: !!token,
-        hasWallet: !!walletAddress,
-        cookies: request.cookies.getAll()
+        hasWallet: !!walletAddress
       });
 
       if (!token || !walletAddress) {
-        console.log('Authentication failed, redirecting to landing page');
+        console.log('Auth failed, redirecting to /');
         return NextResponse.redirect(new URL('/', request.url));
       }
 
@@ -49,7 +43,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
-  ],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 };

@@ -1,140 +1,157 @@
+/* globals.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* globals.css */
+/* RainbowKit stil importu */
 @import '@rainbow-me/rainbowkit/styles.css';
 
-.rainbowkit-modal {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 1000 !important;
-  max-width: 90%;
-  width: 400px;
-  background: #1a1a1a;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+:root {
+  /* Renk Paleti */
+  --color-background: #0D0D0D;
+  --color-surface: #16181C;
+  --color-primary: #8B5CF6;
+  --color-primary-hover: #7C3AED;
+  --color-success: #10B981;
+  --color-error: #EF4444;
+  --color-text: #FFFFFF;
+  --color-text-secondary: #9CA3AF;
+
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.12);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.15);
+  --shadow-lg: 0 10px 15px rgba(0,0,0,0.25);
 }
 
-@media (max-width: 768px) {
-  .rainbowkit-modal {
-    width: 90%;
-    max-width: 100%;
-    padding: 16px;
+/* Temel stiller */
+body {
+  @apply bg-[var(--color-background)] text-[var(--color-text)] antialiased;
+  font-feature-settings: 'ss01' on, 'ss02' on, 'cv01' on, 'cv03' on;
+}
+
+/* RainbowKit Modal Özelleştirmesi */
+.rainbowkit-modal {
+  @apply !bg-[var(--color-surface)] !rounded-[var(--radius-xl)] !border !border-[#2d3748] !shadow-xl;
+
+  /* Modal içi butonlar */
+  button:not([data-testid="close-button"]) {
+    @apply !bg-[var(--color-primary)] hover:!bg-[var(--color-primary-hover)] 
+           !text-white !rounded-[var(--radius-md)] !transition-all;
+  }
+
+  /* Bağlı cüzdan bilgisi */
+  [data-testid="account-button"] {
+    @apply !bg-[#2d3748] hover:!bg-[#374151];
   }
 }
 
-:root {
-  /* Color Variables */
-  --color-background: #000000;
-  --color-surface: #16181c;
-  --color-surface-alt: rgba(0, 0, 0, 0.4);
-  --color-text: #ffffff;
-  --color-text-secondary: #71767b;
-  --color-primary: #1d9bf0;
-  --color-success: #00ba7c;
-  --color-error: #f4212e;
-
-  /* Border Radius */
-  --border-radius-sm: 6px;
-  --border-radius-md: 12px;
-  --border-radius-lg: 24px;
-  --border-radius-full: 9999px;
-
-  /* Layout */
-  --max-content-width: 1280px;
-  --navbar-height: 50px;
-  --sidebar-width: 90px;
-  --sidebar-height: 80px;
-}
-
-body {
-  background-color: var(--color-background);
-  color: var(--color-text);
-  font-feature-settings: 'tnum' on, 'lnum' on, 'case' on;
-}
-
+/* Özel Bileşen Katmanı */
 @layer components {
+  /* Butonlar */
+  .btn-primary {
+    @apply px-6 py-3 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] 
+           text-white rounded-[var(--radius-md)] transition-colors font-medium 
+           flex items-center gap-2;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 bg-[var(--color-surface)] hover:bg-[#1F2937] 
+           border border-[#2d3748] text-[var(--color-text)] rounded-[var(--radius-md)] 
+           transition-colors flex items-center gap-2;
+  }
+
+  /* Kartlar */
   .card {
-    @apply bg-gray-800/50 rounded-lg overflow-hidden border border-gray-700/50;
+    @apply bg-[var(--color-surface)] rounded-[var(--radius-xl)] border border-[#2d3748] 
+           backdrop-blur-sm;
   }
 
   .card-header {
-    @apply p-4 bg-gray-800 border-b border-gray-700 flex items-center justify-between;
+    @apply p-6 border-b border-[#2d3748] flex items-center justify-between;
   }
 
-  .card-title {
-    @apply text-xl font-bold;
+  /* Giriş Alanları */
+  .input-primary {
+    @apply w-full bg-[#1F2937] border border-[#2d3748] rounded-[var(--radius-md)] 
+           px-4 py-3 text-[var(--color-text)] focus:ring-2 focus:ring-[var(--color-primary)] 
+           focus:border-transparent transition-all;
   }
 
-  .button-primary {
-    @apply px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-lg transition-colors font-medium flex items-center gap-2;
+  /* Bağlantı Durum Göstergeleri */
+  .connection-status {
+    @apply px-4 py-2 rounded-full border text-sm flex items-center gap-2;
+
+    &.connected {
+      @apply bg-[#059669]/20 border-emerald-500 text-emerald-300;
+    }
+
+    &.disconnected {
+      @apply bg-[#1F2937] border-[#374151] text-[var(--color-text-secondary)];
+    }
   }
 
-  .button-secondary {
-    @apply px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors font-medium border border-blue-500/30 flex items-center gap-2;
+  /* Özellik Kartları */
+  .feature-card {
+    @apply p-6 bg-[var(--color-surface)] rounded-[var(--radius-lg)] border border-[#2d3748] 
+           hover:border-[var(--color-primary)] transition-colors;
+
+    h3 {
+      @apply text-xl font-bold mb-2;
+    }
+
+    p {
+      @apply text-[var(--color-text-secondary)] text-sm;
+    }
   }
 
-  .input-search {
-    @apply bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 pl-10 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent;
-  }
-
-  .list-item {
-    @apply flex items-center p-4 hover:bg-gray-700/30 transition-colors border-b border-gray-700/50 last:border-b-0;
-  }
-
-  .gradient-text {
-    @apply bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text;
-  }
-
-  .search-input {
-    @apply w-full bg-[#16181c] text-white rounded-full py-2 px-12 border-none focus:outline-none focus:ring-1 focus:ring-blue-500;
-  }
-
-  .player-row {
-    @apply flex items-center px-4 py-3 gap-3;
-  }
-
-  .player-row-even {
-    @apply bg-[#16181c];
-  }
-
-  .player-row-odd {
-    @apply bg-black/40;
-  }
-
-  .avatar {
-    @apply w-12 h-12 rounded-full bg-gray-800 overflow-hidden;
-  }
-
-  .player-name {
-    @apply font-bold text-white;
-  }
-
-  .player-score {
-    @apply text-green-400;
-  }
-
-  .bet-amount {
-    @apply text-blue-400 font-medium;
-  }
-
-  .bet-count {
-    @apply text-sm text-gray-400;
-  }
-
-  .earnings {
-    @apply text-green-400 font-medium;
+  /* Yükleme Animasyonu */
+  .loading-spinner {
+    @apply w-8 h-8 border-4 border-[var(--color-primary)] border-t-transparent 
+           rounded-full animate-spin;
   }
 }
 
-/* globals.css */
-@import '@rainbow-me/rainbowkit/styles.css';
-
+/* Özel Utility Sınıfları */
 @layer utilities {
+  /* Gradyan Metin */
+  .gradient-text {
+    @apply bg-gradient-to-r from-[var(--color-primary)] to-[#EC4899] 
+           text-transparent bg-clip-text;
+  }
+
+  /* Cam Efekti */
   .glass-effect {
     @apply backdrop-blur-lg bg-white/5 border border-white/10;
+  }
+
+  /* Kısaltılmış Cüzdan Adresi */
+  .wallet-address {
+    @apply font-mono text-sm bg-[#1F2937] px-2 py-1 rounded-[var(--radius-sm)];
+  }
+
+  /* Grid Düzenleri */
+  .responsive-grid {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6;
+  }
+}
+
+/* Mobile Optimizasyon */
+@media (max-width: 768px) {
+  .rainbowkit-modal {
+    @apply !w-[90vw] !p-4;
+
+    button {
+      @apply !text-sm;
+    }
+  }
+
+  .btn-primary, .btn-secondary {
+    @apply px-4 py-2 text-sm;
   }
 }
