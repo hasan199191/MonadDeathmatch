@@ -1,8 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  output: 'standalone',
   images: {
-    domains: ['pbs.twimg.com', 'avatars.githubusercontent.com', 'abs.twimg.com'],
+    domains: ['pbs.twimg.com', 'abs.twimg.com'],
   },
   // Harici hostname'lere izin ver
   experimental: {
