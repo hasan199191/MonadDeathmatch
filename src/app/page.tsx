@@ -47,28 +47,24 @@ export default function HomePage() {
       setError('');
 
       if (!window.ethereum) {
-        throw new Error('Please install MetaMask!');
+        throw new Error('MetaMask is not installed!');
       }
 
       const provider = new ethers.providers.Web3Provider(
         window.ethereum as unknown as ExternalProvider
       );
 
-      const network = await provider.getNetwork();
-      const requiredChainId = process.env.NEXT_PUBLIC_CHAIN_ID;
-      
-      if (network.chainId.toString() !== requiredChainId) {
-        throw new Error(`Please switch to Monad Testnet (Chain ID: ${requiredChainId})`);
-      }
-
-      const accounts = await provider.send("eth_requestAccounts", []);
+      await provider.send("eth_requestAccounts", []);
       const signer = provider.getSigner();
       const walletAddress = await signer.getAddress();
       
       setAddress(walletAddress);
       localStorage.setItem('walletAddress', walletAddress);
+      
+      // Cüzdan bağlantı durumunu cookie'ye kaydet
+      document.cookie = 'walletConnected=true; path=/;'
 
-      if (session?.user) {
+      if (session) {
         await router.replace('/home');
       }
 

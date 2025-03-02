@@ -196,6 +196,15 @@ export default function HomePage() {
     }
   }, [session, isConnected, router])
 
+  useEffect(() => {
+    // Session ve cüzdan kontrolü
+    if (!session || !isConnected) {
+      // Cookie'yi temizle
+      document.cookie = 'walletConnected=false; path=/;'
+      router.replace('/');
+    }
+  }, [session, isConnected, router]);
+
   // Contract state hooks
   const { data: poolInfo } = useContractRead({
     address: MONAD_DEATHMATCH_ADDRESS,
