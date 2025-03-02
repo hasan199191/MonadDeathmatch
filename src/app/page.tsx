@@ -18,15 +18,12 @@ export default function HomePage() {
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [error, setError] = useState<string>('');
 
-<<<<<<< HEAD
   // Sayfa yüklendiğinde cüzdan kontrolü
   useEffect(() => {
     const checkWalletConnection = async () => {
       setMounted(true);
-      // LocalStorage kontrolü
       const savedAddress = localStorage.getItem('walletAddress');
       
-      // MetaMask kontrolü
       if (window.ethereum) {
         try {
           const provider = new ethers.providers.Web3Provider(window.ethereum as any);
@@ -44,14 +41,15 @@ export default function HomePage() {
       if (savedAddress) {
         setAddress(savedAddress);
       }
+      setIsLoadingAuth(false);
     };
 
     checkWalletConnection();
   }, []);
 
-  // Yönlendirme kontrolü - sadece gerekli durumlarda
+  // Yönlendirme kontrolü
   useEffect(() => {
-    if (!mounted) return;
+    if (!mounted || isLoadingAuth) return;
     
     const checkRedirect = async () => {
       if (address && session) {
@@ -67,48 +65,7 @@ export default function HomePage() {
     };
 
     checkRedirect();
-  }, [mounted, address, session, router]);
-=======
-  useEffect(() => {
-    setMounted(true);
-    const savedAddress = localStorage.getItem('walletAddress');
-    if (savedAddress) {
-      setAddress(savedAddress);
-    }
-    setIsLoadingAuth(false);
-  }, []);
-
-  useEffect(() => {
-    if (!mounted || status === 'loading') return;
-
-    const checkAndRedirect = async () => {
-      if (address && session?.user) {
-        try {
-          await router.replace('/home');
-        } catch (error) {
-          console.error('Redirect error:', error);
-        }
-      }
-    };
-
-    checkAndRedirect();
-  }, [mounted, address, session, router, status]);
-
-  useEffect(() => {
-    if (status === 'loading') return;
-
-    const checkAuthAndRedirect = async () => {
-      const walletConnected = localStorage.getItem('walletAddress');
-      
-      if (session && walletConnected && isConnected) {
-        console.log('Redirecting to home:', { session, walletConnected, isConnected });
-        await router.push('/home');
-      }
-    };
-
-    checkAuthAndRedirect();
-  }, [status, session, isConnected, router]);
->>>>>>> c408edef04a17a23be75118847985cfafafd483d
+  }, [mounted, address, session, router, isLoadingAuth]);
 
   const connectMetaMask = async () => {
     try {
@@ -130,19 +87,12 @@ export default function HomePage() {
       // LocalStorage ve Cookie'ye kaydet
       setAddress(walletAddress);
       localStorage.setItem('walletAddress', walletAddress);
-<<<<<<< HEAD
       document.cookie = `walletAddress=${walletAddress}; path=/`;
 
       console.log('Wallet connected:', walletAddress);
 
       if (session) {
         console.log('Session exists, redirecting to home...');
-=======
-      document.cookie = 'walletConnected=true; path=/';
-
-      if (session?.user) {
-        console.log('Wallet connected, redirecting...', { walletAddress, session });
->>>>>>> c408edef04a17a23be75118847985cfafafd483d
         await router.push('/home');
       }
 
@@ -156,7 +106,6 @@ export default function HomePage() {
 
   const handleTwitterSignIn = async () => {
     try {
-<<<<<<< HEAD
       if (address) {
         console.log('Wallet connected, proceeding with Twitter sign in');
         await signIn("twitter", { 
@@ -165,22 +114,6 @@ export default function HomePage() {
         });
       } else {
         await signIn("twitter", { redirect: true });
-=======
-      const walletConnected = localStorage.getItem('walletAddress');
-      
-      const result = await signIn("twitter", {
-        redirect: false,
-        callbackUrl: walletConnected ? '/home' : '/'
-      });
-
-      if (result?.error) {
-        setError('Twitter bağlantısı başarısız.');
-        return;
-      }
-
-      if (result?.ok && walletConnected) {
-        await router.push('/home');
->>>>>>> c408edef04a17a23be75118847985cfafafd483d
       }
     } catch (error) {
       console.error('Twitter sign in error:', error);
