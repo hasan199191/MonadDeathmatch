@@ -15,31 +15,54 @@ export default function HomePage() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string>('');
 
-  // İlk useEffect - Sayfa yüklendiğinde çalışır
+  // Sayfa yüklendiğinde cüzdan kontrolü
   useEffect(() => {
-    setMounted(true);
-    // LocalStorage'dan cüzdan adresini kontrol et
-    const savedAddress = localStorage.getItem('walletAddress');
-    if (savedAddress) {
-      setAddress(savedAddress);
-      console.log('Saved wallet address found:', savedAddress); // Debug için
-    }
-  }, []);
-
-  // İkinci useEffect - Bağlantı durumlarını kontrol eder
-  useEffect(() => {
-    if (!mounted) return;
-
-    const checkAndRedirect = async () => {
-      console.log('Checking connections:', { address, session }); // Debug için
-
-      if (address && session) {
-        console.log('Both connected, redirecting to /home'); // Debug için
-        await router.push('/home');
+    const checkWalletConnection = async () => {
+      setMounted(true);
+      // LocalStorage kontrolü
+      const savedAddress = localStorage.getItem('walletAddress');
+      
+      // MetaMask kontrolü
+      if (window.ethereum) {
+        try {
+          const provider = new ethers.providers.Web3Provider(window.ethereum as any);
+          const accounts = await provider.listAccounts();
+          if (accounts.length > 0) {
+            setAddress(accounts[0]);
+            localStorage.setItem('walletAddress', accounts[0]);
+            document.cookie = `walletAddress=${accounts[0]}; path=/`;
+          }
+        } catch (error) {
+          console.error('MetaMask check error:', error);
+        }
+      }
+      
+      if (savedAddress) {
+        setAddress(savedAddress);
       }
     };
 
-    checkAndRedirect();
+    checkWalletConnection();
+  }, []);
+
+  // Yönlendirme kontrolü - sadece gerekli durumlarda
+  useEffect(() => {
+    if (!mounted) return;
+    
+    const checkRedirect = async () => {
+      if (address && session) {
+        const walletCookie = document.cookie.includes('walletAddress');
+        if (walletCookie) {
+          try {
+            await router.push('/home');
+          } catch (error) {
+            console.error('Navigation error:', error);
+          }
+        }
+      }
+    };
+
+    checkRedirect();
   }, [mounted, address, session, router]);
 
   const connectMetaMask = async () => {
@@ -59,14 +82,15 @@ export default function HomePage() {
       const signer = provider.getSigner();
       const walletAddress = await signer.getAddress();
       
+      // LocalStorage ve Cookie'ye kaydet
       setAddress(walletAddress);
       localStorage.setItem('walletAddress', walletAddress);
+      document.cookie = `walletAddress=${walletAddress}; path=/`;
 
-      console.log('Wallet connected:', walletAddress); // Debug için
+      console.log('Wallet connected:', walletAddress);
 
-      // Twitter bağlı ise hemen yönlendir
       if (session) {
-        console.log('Twitter already connected, redirecting...'); // Debug için
+        console.log('Session exists, redirecting to home...');
         await router.push('/home');
       }
 
@@ -80,10 +104,14 @@ export default function HomePage() {
 
   const handleTwitterSignIn = async () => {
     try {
-      await signIn("twitter", { redirect: true });
-      // Redirect if wallet is connected
       if (address) {
-        router.push('/home');
+        console.log('Wallet connected, proceeding with Twitter sign in');
+        await signIn("twitter", { 
+          callbackUrl: '/home',
+          redirect: true 
+        });
+      } else {
+        await signIn("twitter", { redirect: true });
       }
     } catch (error) {
       console.error('Twitter sign in error:', error);
