@@ -23,11 +23,16 @@
   --input: #262626;
   --ring: #2563eb;
   --max-content-width: 100%; /* Maksimum genişlik sınırlaması kaldırıldı */
+  --foreground-rgb: 255, 255, 255;
+  --background-rgb: 13, 13, 13;
 }
 
 body {
   margin: 0;
   padding: 0;
+  color: rgb(var(--foreground-rgb));
+  background: rgb(var(--background-rgb));
+  min-height: 100vh;
 }
 
 .sidebar-menu-item {
@@ -110,4 +115,13 @@ body {
 .wallet-address {
   font-size: 0.9em;
   opacity: 0.7;
+}
+
+/* Navbar stilleri */
+.navbar-link {
+  @apply text-gray-300 hover:text-[#8B5CF6] transition-colors;
+}
+
+.navbar-link-active {
+  @apply text-[#8B5CF6];
 }
