@@ -1,16 +1,15 @@
 import { configureChains, createConfig } from 'wagmi'
 import { publicProvider } from 'wagmi/providers/public'
-import { monadChain } from './chains'
+import { monad } from './chains'  // monadChain yerine monad kullan
 
 const { chains, publicClient } = configureChains(
-  [monadChain],
+  [monad],  // monadChain yerine monad kullan
   [publicProvider()]
 )
 
-export const config = createConfig({
+const config = createConfig({
   autoConnect: true,
   publicClient,
-  chains
 })
 
-export { chains }
+export default config

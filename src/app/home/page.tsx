@@ -2,7 +2,8 @@
 
 import { useRouter } from 'next/navigation';
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { ethers } from 'ethers'; // Eksik olan ethers importu
+import type { FC } from 'react'; // Tip import'u ekledik
+import { ethers } from 'ethers'; 
 import { 
   useContractRead,
   useContractWrite,
@@ -25,6 +26,31 @@ import type { NextRequest } from "next/server";
 import LoadingSkeleton from '@/components/LoadingSkeleton';
 import EliminatedPlayers from '@/components/EliminatedPlayers';
 import EliminationTimer from '@/components/EliminationTimer';
+import { createPublicClient, http } from 'viem'
+import { monad } from '@/config/chains'
+
+// Tip tanımlamalarını dosyanın başına taşıyalım
+interface Bet {
+  participant: string
+  amount: bigint
+  isActive: boolean
+  timestamp: number
+  poolId?: bigint
+  transactionHash?: string
+}
+
+interface BetItemProps {
+  bet: Bet
+  index: number
+}
+
+// User interface'ini ekleyelim
+interface User {
+  id: string;
+  walletAddress: string;
+  twitterUsername?: string | null;
+  profileImageUrl?: string | null;
+}
 
 // 1. localStorage kullanarak bahisleri takip etmek için bir utils fonksiyonu oluşturun
 // Bu fonksiyon src/utils/bets.ts olarak kaydedilebilir
@@ -65,6 +91,7 @@ const HomePage = () => {
   const [betType, setBetType] = useState<string>("top10"); // String olarak saklayın
   const [targetParticipant, setTargetParticipant] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);
+  const [maxParticipants, setMaxParticipants] = useState<number | null>(null)
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -136,6 +163,27 @@ const HomePage = () => {
     connectTwitterWithWallet();
   }, [session, address]);
 
+  useEffect(() => {
+    if (!session || !isConnected) {
+      router.push('/')
+    } else {
+      const client = createPublicClient({
+        chain: monad,
+        transport: http()
+      })
+
+      client.readContract({
+        address: MONAD_DEATHMATCH_ADDRESS,
+        abi: MONAD_DEATHMATCH_ABI,
+        functionName: 'MAX_PARTICIPANTS',
+      }).then((result: bigint) => {
+        setMaxParticipants(Number(result))
+      }).catch((error) => {
+        console.error('Error fetching MAX_PARTICIPANTS:', error)
+      })
+    }
+  }, [session, isConnected, router])
+
   // Contract state hooks
   const { data: poolInfo } = useContractRead({
     address: MONAD_DEATHMATCH_ADDRESS,
@@ -153,13 +201,6 @@ const HomePage = () => {
     args: [BigInt(1)],
     chainId: monadChain.id,
     watch: true,
-  });
-
-  const { data: maxParticipants } = useContractRead({
-    address: MONAD_DEATHMATCH_ADDRESS,
-    abi: MONAD_DEATHMATCH_ABI,
-    functionName: 'MAX_PARTICIPANTS',
-    chainId: monadChain.id,
   });
 
   const { data: balance } = useBalance({
@@ -384,7 +425,7 @@ const HomePage = () => {
   }, [userBets]);
 
   // Bahis türlerini doğru göstermek için bu bileşeni ekleyelim
-  const BetItem = ({ bet, index }) => {
+  const BetItem: FC<BetItemProps> = ({ bet, index }) => {
     return (
       <div className="bg-[#222222] p-2 rounded-lg">
         <div className="flex justify-between items-center">
@@ -415,7 +456,6 @@ const HomePage = () => {
           </span>
         </div>
         
-        {/* İsteğe bağlı: Bahis tarihi, bahsin zamanı geçip geçmediği gibi bilgiler eklenebilir */}
         <div className="mt-1 pt-1 border-t border-gray-800">
           <div className="flex justify-between">
             <span className="text-xs text-gray-500">
@@ -436,20 +476,19 @@ const HomePage = () => {
   // Twitter/X kullanıcı verilerini almak için useEffect ekleyin
   useEffect(() => {
     const fetchTwitterData = async () => {
-      if (!participants || participants.length === 0) return;
-      
       try {
         const response = await fetch('/api/user/get-users');
-        if (!response.ok) throw new Error('Failed to fetch user data');
+        const users: User[] = await response.json();
         
-        const users = await response.json();
-        console.log("Kullanıcı verileri:", users);
+        // participants'in tanımlı olup olmadığını kontrol et
+        if (!participants) {
+          console.log("Katılımcı listesi henüz yüklenmedi.");
+          return;
+        }
         
-        // Katılımcı listesini zenginleştirin
         const enriched = participants.map(participant => {
-          // Katılımcının cüzdan adresine göre X bilgilerini bul
           const userMatch = users.find(
-            user => user.walletAddress.toLowerCase() === participant.toLowerCase()
+            (user: User) => user.walletAddress.toLowerCase() === participant.toLowerCase()
           );
           
           return {
@@ -466,6 +505,23 @@ const HomePage = () => {
     };
     
     fetchTwitterData();
+  }, [participants]);
+
+  // Katılımcı listesini zenginleştirmek için geçici çözüm
+  useEffect(() => {
+    if (!participants || participants.length === 0) return;
+    
+    // Mock veriler oluştur
+    const enriched = participants.map((participant, index) => {
+      return {
+        address: participant,
+        twitterUsername: `user${index}`,
+        profileImageUrl: null,
+        isEliminated: false
+      };
+    });
+    
+    setEnrichedParticipants(enriched);
   }, [participants]);
 
   if (!isMounted) {
@@ -747,21 +803,33 @@ const HomePage = () => {
   );
 };
 
-// Katılımcıları görüntüleme bileşeni
-function Participants({ participants }) {
-  const [enrichedParticipants, setEnrichedParticipants] = useState([]);
+// Katılımcı tipi için interface ekleyin
+interface ParticipantProps {
+  participants: string[];
+}
+
+// Katılımcıları görüntüleme bileşeni - tip eklenmiş hali
+function Participants({ participants }: ParticipantProps) {
+  // Zenginleştirilmiş katılımcı tipi
+  interface EnrichedParticipant {
+    walletAddress: string;
+    twitterUsername: string | null;
+    profileImageUrl: string | null;
+  }
+
+  const [enrichedParticipants, setEnrichedParticipants] = useState<EnrichedParticipant[]>([]);
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         const response = await fetch('/api/user/get-users');
-        const users = await response.json();
+        const users: User[] = await response.json(); // Tip ekledik
         console.log("Tüm kullanıcılar:", users);
         
         // Cüzdan adresleri için profil bilgilerini eşleştirin
         const enriched = participants.map(address => {
           const userMatch = users.find(
-            user => user.walletAddress.toLowerCase() === address.toLowerCase()
+            (user: User) => user.walletAddress.toLowerCase() === address.toLowerCase() // Tip ekledik
           );
           
           return {

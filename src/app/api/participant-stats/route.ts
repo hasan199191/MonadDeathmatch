@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createPublicClient, http } from 'viem';
 import { monad } from '@/config/chains';
 import { MONAD_DEATHMATCH_ABI, MONAD_DEATHMATCH_ADDRESS } from '@/config/contracts';
+import prisma from 'lib/prisma';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const poolId = searchParams.get('poolId');
+    const address = searchParams.get('address');
 
     if (!poolId) {
       return NextResponse.json(
@@ -20,13 +22,30 @@ export async function GET(request: NextRequest) {
       transport: http()
     });
 
-    // Sadece poolId parametresi gönderiyoruz
+    // Blockchain'den katılımcı verisini al
     const participants = await client.readContract({
       address: MONAD_DEATHMATCH_ADDRESS,
       abi: MONAD_DEATHMATCH_ABI,
       functionName: 'getParticipants',
-      args: [BigInt(poolId)], // Tek parametre
+      args: [BigInt(poolId)],
     });
+
+    // Kullanıcı verileriyle zenginleştir (eğer varsa)
+    if (participants && participants.length > 0) {
+      const users = await prisma.user.findMany({
+        where: {
+          walletAddress: {
+            in: participants.map(p => p.toLowerCase())
+          }
+        }
+      });
+
+      // Zenginleştirilmiş veriler
+      return NextResponse.json({ 
+        participants,
+        enrichedData: users
+      });
+    }
 
     return NextResponse.json({ participants });
   } catch (error) {

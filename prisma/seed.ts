@@ -1,15 +1,20 @@
-import { prisma } from '../src/lib/prisma'
+// Seed dosyasını mock implementasyonla uyumlu hale getir
+import { prisma } from '../lib/prisma'
 
 async function main() {
-  // Seed verileriniz buraya gelecek
-  console.log('Veritabanı seed işlemi başladı...')
+  console.log('Mock seed işlemi başlatılıyor...');
+  // Seed işlemi artık mock veriyi kullanacak
+  // ...
 }
 
 main()
   .catch((e) => {
-    console.error('Seed hatası:', e)
+    console.error(e)
     process.exit(1)
   })
   .finally(async () => {
-    await prisma.$disconnect()
+    // Eğer disconnect metodu varsa çağır
+    if (prisma.$disconnect) {
+      await prisma.$disconnect()
+    }
   })

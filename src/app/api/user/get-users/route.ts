@@ -1,25 +1,25 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import prisma from 'lib/prisma';
 
 export async function GET() {
   try {
-    console.log("Kullanıcılar getiriliyor...");
+    // Mock veriler yerine gerçek veritabanı sorgusu
     const users = await prisma.user.findMany({
       select: {
+        id: true,
         walletAddress: true,
-        twitterId: true,
         twitterUsername: true,
-        profileImageUrl: true
+        profileImageUrl: true,
+        createdAt: true
       }
     });
-    
-    console.log(`${users.length} kullanıcı bulundu:`, users);
+
     return NextResponse.json(users);
   } catch (error) {
-    console.error('Kullanıcılar getirilirken hata:', error);
-    return NextResponse.json({ 
-      error: 'Failed to fetch users',
-      details: error instanceof Error ? error.message : String(error)
-    }, { status: 500 });
+    console.error('Kullanıcı verileri getirilirken hata:', error);
+    return NextResponse.json(
+      { error: 'Kullanıcı verileri alınamadı' },
+      { status: 500 }
+    );
   }
 }
