@@ -10,62 +10,57 @@ import { useAccount } from 'wagmi';
 
 export default function HomePage() {
   const { data: session, status } = useSession();
-  const { isConnected } = useAccount();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [address, setAddress] = useState<string>('');
   const [isConnecting, setIsConnecting] = useState(false);
-  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [error, setError] = useState<string>('');
 
-  // Sayfa yüklendiğinde cüzdan kontrolü
+  // Cüzdan ve auth durumu kontrolü
   useEffect(() => {
-    const checkWalletConnection = async () => {
-      setMounted(true);
-      const savedAddress = localStorage.getItem('walletAddress');
-      
-      if (window.ethereum) {
-        try {
+    const checkAuth = async () => {
+      try {
+        if (!mounted) {
+          setMounted(true);
+          return;
+        }
+
+        // Auth durumu yüklenene kadar bekle
+        if (status === 'loading') return;
+
+        const savedAddress = localStorage.getItem('walletAddress');
+        
+        if (window.ethereum) {
           const provider = new ethers.providers.Web3Provider(window.ethereum as any);
           const accounts = await provider.listAccounts();
+          
           if (accounts.length > 0) {
             setAddress(accounts[0]);
             localStorage.setItem('walletAddress', accounts[0]);
             document.cookie = `walletAddress=${accounts[0]}; path=/`;
           }
-        } catch (error) {
-          console.error('MetaMask check error:', error);
         }
-      }
-      
-      if (savedAddress) {
-        setAddress(savedAddress);
-      }
-      setIsLoadingAuth(false);
-    };
 
-    checkWalletConnection();
-  }, []);
+        console.log('Auth check:', {
+          session: session,
+          walletConnected: savedAddress,
+          status: status
+        });
 
-  // Yönlendirme kontrolü
-  useEffect(() => {
-    if (!mounted || isLoadingAuth) return;
-    
-    const checkRedirect = async () => {
-      if (address && session) {
-        const walletCookie = document.cookie.includes('walletAddress');
-        if (walletCookie) {
-          try {
-            await router.push('/home');
-          } catch (error) {
-            console.error('Navigation error:', error);
-          }
+        // Her iki hesap da bağlıysa yönlendir
+        if (session && savedAddress) {
+          await router.push('/home');
         }
+      } catch (error) {
+        console.error('Auth check error:', error);
+      } finally {
+        setIsAuthChecking(false);
       }
     };
 
-    checkRedirect();
-  }, [mounted, address, session, router, isLoadingAuth]);
+    checkAuth();
+  }, [mounted, session, status, router]);
 
   const connectMetaMask = async () => {
     try {
@@ -73,18 +68,16 @@ export default function HomePage() {
       setError('');
 
       if (!window.ethereum) {
-        throw new Error('MetaMask yüklü değil!');
+        throw new Error('MetaMask is not installed!');
       }
 
       const provider = new ethers.providers.Web3Provider(
         window.ethereum as unknown as ExternalProvider
       );
 
-      await provider.send("eth_requestAccounts", []);
-      const signer = provider.getSigner();
-      const walletAddress = await signer.getAddress();
+      const accounts = await provider.send("eth_requestAccounts", []);
+      const walletAddress = accounts[0];
       
-      // LocalStorage ve Cookie'ye kaydet
       setAddress(walletAddress);
       localStorage.setItem('walletAddress', walletAddress);
       document.cookie = `walletAddress=${walletAddress}; path=/`;
@@ -92,7 +85,6 @@ export default function HomePage() {
       console.log('Wallet connected:', walletAddress);
 
       if (session) {
-        console.log('Session exists, redirecting to home...');
         await router.push('/home');
       }
 
