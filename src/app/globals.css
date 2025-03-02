@@ -187,3 +187,24 @@ body {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
 }
+
+/* Banner Image */
+.banner-image {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.3;
+  object-fit: cover;
+}
+
+/* Banner Gradient */
+.banner-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(13, 13, 13, 0.7),
+    #0D0D0D
+  );
+}

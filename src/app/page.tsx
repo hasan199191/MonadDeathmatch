@@ -1,68 +1,48 @@
-// app/page.tsx
 'use client';
 
-import { signIn, useSession } from 'next-auth/react';
 import Image from 'next/image';
-import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useRef } from 'react';
+import { useSession, signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { useAccount } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 
 export default function LandingPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
   const { address: wagmiAddress, isConnected } = useAccount();
   const hasRedirected = useRef(false);
 
-  // Mount check
+  // Yönlendirme mantığı
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    if (status === 'loading') return;
+    if (hasRedirected.current) return;
 
-  // Redirect logic
-  useEffect(() => {
-    if (!mounted || status === 'loading' || hasRedirected.current) return;
+    console.log('Auth Check:', { session, isConnected });
 
-    console.log('Landing Auth Check:', {
-      session: !!session,
-      isConnected,
-      hasRedirected: hasRedirected.current
-    });
-
-    if (session && isConnected) {
-      console.log('Both accounts connected, redirecting to /home');
+    if (isConnected && session) {
       hasRedirected.current = true;
-      router.replace('/home');
+      console.log('Redirecting to home...');
+      router.push('/home');
     }
-  }, [mounted, session, isConnected, status, router]);
-
-  const handleTwitterSignIn = async () => {
-    try {
-      await signIn('twitter', { callbackUrl: '/home' });
-    } catch (error) {
-      console.error('Twitter sign-in error:', error);
-    }
-  };
-
-  if (!mounted) return null;
+  }, [isConnected, session, status, router]);
 
   return (
-    <div className="min-h-screen relative bg-[#0D0D0D] overflow-hidden">
+    <div className="min-h-screen relative bg-[#0D0D0D]">
       {/* Banner Background */}
-      <div className="absolute inset-0 z-0 overflow-hidden">
+      <div className="absolute inset-0 z-0">
         <Image
           src="/banner.png"
-          alt="Monad Deathmatch Banner"
+          alt="Background"
           fill
-          className="object-cover object-center opacity-30"
+          className="object-cover opacity-30"
           priority
           quality={100}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0D0D0D]/70 to-[#0D0D0D]" />
       </div>
 
-      {/* Ana İçerik */}
+      {/* Content */}
       <div className="relative z-10 container mx-auto px-4 pt-32 md:pt-40">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
