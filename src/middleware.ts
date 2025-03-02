@@ -4,10 +4,12 @@ import { getToken } from 'next-auth/jwt';
 
 export async function middleware(request: NextRequest) {
   const token = await getToken({ req: request });
-  
-  if (request.nextUrl.pathname === "/home") {
-    if (!token) {
-      return NextResponse.redirect(new URL("/", request.url));
+  const walletAddress = request.cookies.get('walletAddress');
+
+  // /home sayfası için kontrol
+  if (request.nextUrl.pathname.startsWith('/home')) {
+    if (!token || !walletAddress) {
+      return NextResponse.redirect(new URL('/', request.url));
     }
   }
 
@@ -15,5 +17,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/home']
+  matcher: ['/home/:path*']
 };

@@ -15,16 +15,21 @@ export default function HomePage() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string>('');
 
+  // Check wallet connection on page load
   useEffect(() => {
     setMounted(true);
+    const savedAddress = localStorage.getItem('walletAddress');
+    if (savedAddress) {
+      setAddress(savedAddress);
+    }
   }, []);
 
-  // Her iki hesap da bağlıysa ana sayfaya yönlendir
+  // Redirect when both accounts are connected
   useEffect(() => {
-    if (address && session) {
+    if (mounted && address && session) {
       router.push('/home');
     }
-  }, [address, session, router]);
+  }, [mounted, address, session, router]);
 
   const connectMetaMask = async () => {
     try {
@@ -46,6 +51,11 @@ export default function HomePage() {
       setAddress(walletAddress);
       localStorage.setItem('walletAddress', walletAddress);
 
+      // Redirect if Twitter is connected
+      if (session) {
+        router.push('/home');
+      }
+
     } catch (error: any) {
       console.error('Wallet connection error:', error);
       setError(error.message);
@@ -54,8 +64,16 @@ export default function HomePage() {
     }
   };
 
-  const handleTwitterSignIn = () => {
-    signIn("twitter", { redirect: true });
+  const handleTwitterSignIn = async () => {
+    try {
+      await signIn("twitter", { redirect: true });
+      // Redirect if wallet is connected
+      if (address) {
+        router.push('/home');
+      }
+    } catch (error) {
+      console.error('Twitter sign in error:', error);
+    }
   };
 
   if (!mounted) return null;
@@ -69,11 +87,12 @@ export default function HomePage() {
           alt="Background"
           fill
           className="object-cover opacity-20"
+          priority
         />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#0D0D0D]" />
       </div>
 
-      {/* Content */}
+      {/* Main Content */}
       <div className="relative z-10 container mx-auto px-4 pt-32 md:pt-40">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
@@ -85,6 +104,12 @@ export default function HomePage() {
 
           {/* Connection Buttons and Messages */}
           <div className="flex flex-col items-center gap-4 max-w-md mx-auto mb-16">
+            {error && (
+              <div className="w-full p-4 bg-red-500/20 border border-red-500 rounded-lg text-red-100">
+                {error}
+              </div>
+            )}
+
             <button
               onClick={connectMetaMask}
               disabled={!!address || isConnecting}
@@ -104,10 +129,10 @@ export default function HomePage() {
                   ? 'bg-green-600 text-white cursor-not-allowed opacity-75' 
                   : 'bg-[#8B5CF6] hover:bg-[#7C3AED] text-white'}`}
             >
-              {session ? '✓ X Connected' : 'Connect with X'}
+              {session ? '✓ Connected with X' : 'Connect with X'}
             </button>
 
-            {/* Guidance messages */}
+            {/* Guidance Messages */}
             {address && !session && (
               <p className="text-blue-400 text-sm">Please connect your X account to continue</p>
             )}
