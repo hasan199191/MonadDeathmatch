@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
 export async function middleware(request: NextRequest) {
-  // Middleware'i statik dosyalar için çalıştırma
+  // Statik dosyalar için middleware'i atla
   if (
     request.nextUrl.pathname.startsWith('/_next') ||
     request.nextUrl.pathname.includes('/api/auth') ||
@@ -12,16 +12,17 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const token = await getToken({ 
-    req: request,
-    secret: process.env.NEXTAUTH_SECRET
-  });
-
-  const walletAddress = request.cookies.get('walletAddress')?.value;
-
-  // Sadece /home sayfasına erişim kontrolü
+  console.log('Middleware PATH:', request.nextUrl.pathname);
+  
+  // Home sayfası için güvenlik kontrolü
   if (request.nextUrl.pathname === '/home') {
+    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const walletAddress = request.cookies.get('walletAddress')?.value;
+    
+    console.log('Middleware auth check:', { hasToken: !!token, hasWallet: !!walletAddress });
+    
     if (!token || !walletAddress) {
+      console.log('Unauthorized access, redirecting to landing');
       return NextResponse.redirect(new URL('/', request.url));
     }
   }
@@ -31,6 +32,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|api/auth).*)',
+    '/((?!api/auth|_next/static|_next/image|favicon.ico).*)',
   ],
 };

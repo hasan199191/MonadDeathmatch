@@ -87,20 +87,6 @@ export default function HomePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // Bu sayfada yönlendirme kontrolü yapma!
-  // Middleware bunu hallediyor
-
-  if (!mounted || status === 'loading') {
-    return <div>Loading...</div>;
-  }
-
-  // Normal sayfa içeriği...
-
   const { isConnected } = useAccount();
   const [address, setAddress] = useState<string>('');
   const [betAmount, setBetAmount] = useState('');
@@ -110,16 +96,41 @@ export default function HomePage() {
   const [maxParticipants, setMaxParticipants] = useState<number | null>(null)
   const [isWalletConnected, setIsWalletConnected] = useState(false);
 
+  // TEK BİR AUTH KONTROLÜ
   useEffect(() => {
+    if (!mounted) {
+      setMounted(true);
+      return;
+    }
+    
+    // Session yüklenene kadar bekle
+    if (status === 'loading') return;
+    
+    console.log('Home page auth check:', {
+      session: !!session,
+      status,
+      isConnected,
+      savedAddress: localStorage.getItem('walletAddress')
+    });
+    
     const savedAddress = localStorage.getItem('walletAddress');
-    if (!savedAddress || status === 'unauthenticated') {
-      router.replace('/');
-    } else {
+    if (savedAddress) {
       setAddress(savedAddress);
       setIsWalletConnected(true);
+      
+      // Cookie'yi güncelle
+      document.cookie = `walletAddress=${savedAddress}; path=/; max-age=86400`;
     }
-  }, [status, router]);
-
+    
+    // Sadece session veya cüzdan yoksa yönlendir
+    if (!session || (!isConnected && !savedAddress)) {
+      console.log('Missing auth, redirecting to landing page');
+      router.replace('/');
+    }
+  }, [mounted, session, status, isConnected, router]);
+  
+  // DİĞER useEffect'lerdeki REDIRECT KODLARINI KALDIRIN
+  
   useEffect(() => {
     if (typeof window !== 'undefined') {
       // LocalStorage'den bahis verilerini yükle
@@ -210,15 +221,6 @@ export default function HomePage() {
       })
     }
   }, [session, isConnected, router])
-
-  useEffect(() => {
-    // Session ve cüzdan kontrolü
-    if (!session || !isConnected) {
-      // Cookie'yi temizle
-      document.cookie = 'walletConnected=false; path=/;'
-      router.replace('/');
-    }
-  }, [session, isConnected, router]);
 
   // Contract state hooks
   const { data: poolInfo } = useContractRead({
