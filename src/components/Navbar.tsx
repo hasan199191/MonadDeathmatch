@@ -13,7 +13,6 @@ export const Navbar = () => {
     setMounted(true);
   }, []);
 
-  // Sayfa yüklenmeden içeriği gösterme
   if (!mounted) return null;
 
   return (
@@ -25,16 +24,6 @@ export const Navbar = () => {
             <Link href="/home" className="text-[#8B5CF6] font-bold text-xl">
               Monad Deathmatch
             </Link>
-            <div className="hidden md:flex items-center gap-6">
-              <Link 
-                href="/rules" 
-                className={`text-gray-300 hover:text-[#8B5CF6] transition-colors ${
-                  pathname === '/rules' ? 'text-[#8B5CF6]' : ''
-                }`}
-              >
-                Rules
-              </Link>
-            </div>
           </div>
           
           {/* Cüzdan Durumu */}
