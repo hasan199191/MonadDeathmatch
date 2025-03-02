@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { ethers } from 'ethers';
 import type { ExternalProvider } from '@ethersproject/providers';
 import { useAccount } from 'wagmi';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 
 export default function LandingPage() {
   const { data: session, status } = useSession();
@@ -73,36 +74,6 @@ export default function LandingPage() {
     }
   }, [mounted, session, address, status, router]);
 
-  const connectMetaMask = async () => {
-    try {
-      setIsConnecting(true);
-      setError('');
-
-      if (!window.ethereum) {
-        throw new Error('MetaMask is not installed!');
-      }
-
-      const provider = new ethers.providers.Web3Provider(
-        window.ethereum as unknown as ExternalProvider
-      );
-
-      const accounts = await provider.send("eth_requestAccounts", []);
-      const walletAddress = accounts[0];
-      
-      setAddress(walletAddress);
-      localStorage.setItem('walletAddress', walletAddress);
-      document.cookie = `walletAddress=${walletAddress}; path=/; max-age=86400; SameSite=Lax`;
-      
-      console.log('Wallet connected:', walletAddress);
-
-    } catch (error: any) {
-      console.error('Wallet connection error:', error);
-      setError(error.message);
-    } finally {
-      setIsConnecting(false);
-    }
-  };
-
   const handleTwitterSignIn = async () => {
     try {
       if (address) {
@@ -146,7 +117,7 @@ export default function LandingPage() {
             Join the ultimate battle for survival and glory
           </p>
 
-          {/* Connection Buttons and Messages */}
+          {/* Updated Connection Buttons and Messages */}
           <div className="flex flex-col items-center gap-4 max-w-md mx-auto mb-16">
             {error && (
               <div className="w-full p-4 bg-red-500/20 border border-red-500 rounded-lg text-red-100">
@@ -154,16 +125,52 @@ export default function LandingPage() {
               </div>
             )}
 
-            <button
-              onClick={connectMetaMask}
-              disabled={!!address || isConnecting}
-              className={`w-full font-bold py-4 px-6 rounded-lg transition-all duration-200 flex items-center justify-center gap-2
-                ${address 
-                  ? 'bg-green-600 text-white cursor-not-allowed opacity-75' 
-                  : 'bg-[#8B5CF6] hover:bg-[#7C3AED] text-white'}`}
-            >
-              {isConnecting ? 'Connecting...' : address ? '✓ Wallet Connected' : 'Connect Wallet'}
-            </button>
+            {/* Use only RainbowKit's ConnectButton */}
+            <div className="w-full">
+              <ConnectButton.Custom>
+                {({
+                  account,
+                  chain,
+                  openConnectModal,
+                  mounted: rainbowKitMounted,
+                }) => {
+                  const ready = rainbowKitMounted;
+                  
+                  return (
+                    <div
+                      {...(!ready && {
+                        'aria-hidden': true,
+                        'style': {
+                          opacity: 0,
+                          pointerEvents: 'none',
+                          userSelect: 'none',
+                        },
+                      })}
+                      className="w-full"
+                    >
+                      {(() => {
+                        if (!ready || !account) {
+                          return (
+                            <button
+                              onClick={openConnectModal}
+                              className="w-full font-bold py-4 px-6 rounded-lg bg-[#8B5CF6] hover:bg-[#7C3AED] text-white transition-all duration-200"
+                            >
+                              Connect Wallet
+                            </button>
+                          );
+                        }
+
+                        return (
+                          <div className="w-full py-4 px-6 rounded-lg bg-green-600/20 border border-green-500 text-white font-bold">
+                            ✓ Connected: {account.displayName}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  );
+                }}
+              </ConnectButton.Custom>
+            </div>
 
             <button
               onClick={handleTwitterSignIn}
@@ -176,25 +183,16 @@ export default function LandingPage() {
               {session ? '✓ Connected with X' : 'Connect with X'}
             </button>
 
-            {/* Guidance Messages */}
-            {address && !session && (
+            {/* Connection Status Messages */}
+            {isConnected && !session && (
               <p className="text-blue-400 text-sm">Please connect your X account to continue</p>
             )}
-            {!address && session && (
+            {!isConnected && session && (
               <p className="text-blue-400 text-sm">Please connect your wallet to continue</p>
             )}
           </div>
 
-          {/* Cüzdan Bağlantı Butonu */}
-          {!isConnected ? (
-            <ConnectButton />
-          ) : (
-            <div className="px-4 py-2 bg-[#8B5CF6]/20 border border-[#8B5CF6] rounded-lg text-white">
-              Connected: {wagmiAddress?.slice(0, 6)}...{wagmiAddress?.slice(-4)}
-            </div>
-          )}
-
-          {/* Features Grid */}
+          {/* Rest of the features grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
             <div className="bg-black/30 backdrop-blur-sm p-6 rounded-xl border border-gray-800">
               <h3 className="text-xl font-bold text-white mb-2">
