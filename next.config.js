@@ -5,6 +5,11 @@ const nextConfig = {
   images: {
     domains: ['pbs.twimg.com', 'abs.twimg.com'],
   },
+  env: {
+    NEXT_PUBLIC_CONTRACT_ADDRESS: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS,
+    NEXT_PUBLIC_MONAD_RPC_URL: process.env.NEXT_PUBLIC_MONAD_RPC_URL,
+    NEXT_PUBLIC_MONAD_CHAIN_ID: process.env.NEXT_PUBLIC_MONAD_CHAIN_ID,
+  },
   // Harici hostname'lere izin ver
   experimental: {
     externalDir: true,
