@@ -256,3 +256,22 @@ body {
   --rk-colors-modalText: white;
   --rk-radii-connectButton: 0.5rem;
 }
+
+/* Feature Cards */
+.feature-card {
+  @apply bg-[#1A1A1A] p-6 rounded-xl border border-[#262626] 
+         hover:border-[#8B5CF6] transition-colors;
+}
+
+.feature-icon {
+  @apply h-12 w-12 bg-[#8B5CF6]/20 rounded-lg flex items-center 
+         justify-center mb-4;
+}
+
+.feature-title {
+  @apply text-xl font-semibold text-white mb-2;
+}
+
+.feature-description {
+  @apply text-gray-400;
+}
