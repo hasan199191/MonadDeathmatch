@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { useSession } from "next-auth/react";
+import { useSession, signIn } from "next-auth/react"; // signIn'i import et
 import { useRouter } from "next/navigation";
 import { useAccount } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
@@ -10,172 +10,107 @@ export default function LandingPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const { address: wagmiAddress, isConnected } = useAccount();
-  const hasAttemptedRedirect = useRef(false);
+  const hasRedirected = useRef(false);
 
   useEffect(() => {
-    // Erken çıkış durumları
     if (status === 'loading') return;
-    if (hasAttemptedRedirect.current) return;
-    
-    console.log('Landing Page Auth Check:', {
+    if (hasRedirected.current) return;
+
+    console.log('Landing Auth Check:', {
       session: !!session,
       isConnected,
-      hasAttempted: hasAttemptedRedirect.current
+      hasRedirected: hasRedirected.current
     });
 
-    // Her iki hesap da bağlıysa yönlendir
     if (session && isConnected) {
-      hasAttemptedRedirect.current = true;
-      console.log('Redirecting to home page...');
+      hasRedirected.current = true;
+      console.log('Both accounts connected, redirecting to /home');
       router.replace('/home');
     }
   }, [session, status, isConnected, router]);
 
+  // Twitter sign in handler
   const handleTwitterSignIn = async () => {
-    try {
-      if (wagmiAddress) {
-        console.log('Wallet connected, proceeding with Twitter sign in');
-        await signIn("twitter", { 
-          callbackUrl: '/home',
-          redirect: true 
-        });
-      } else {
-        await signIn("twitter", { redirect: true });
-      }
-    } catch (error) {
-      console.error('Twitter sign in error:', error);
-      setError('Twitter bağlantısı sırasında hata oluştu.');
+    if (wagmiAddress) {
+      console.log('Wallet connected, proceeding with Twitter sign in');
+      await signIn("twitter", { 
+        callbackUrl: '/home'
+      });
+    } else {
+      console.log('Please connect wallet first');
     }
   };
 
   return (
-    <div className="min-h-screen relative bg-[#0D0D0D]">
-      {/* Banner Background */}
-      <div className="absolute inset-0 z-0">
-        <Image
-          src="/Untitled (Outdoor Banner (72 in x 36 in)) (1).png"
-          alt="Background"
-          fill
-          className="object-cover opacity-20"
-          priority
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#0D0D0D]" />
-      </div>
+    <div className="min-h-screen bg-[#0D0D0D]">
+      <div className="container mx-auto px-4 py-16">
+        <div className="max-w-xl mx-auto space-y-8">
+          {/* Wallet Connection */}
+          <div className="space-y-4">
+            <ConnectButton.Custom>
+              {({
+                account,
+                chain,
+                openConnectModal,
+                mounted
+              }) => {
+                const ready = mounted;
 
-      {/* Main Content */}
-      <div className="relative z-10 container mx-auto px-4 pt-32 md:pt-40">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
-            Monad Deathmatch
-          </h1>
-          <p className="text-xl md:text-2xl text-gray-300 mb-12">
-            Join the ultimate battle for survival and glory
-          </p>
-
-          {/* Updated Connection Buttons and Messages */}
-          <div className="flex flex-col items-center gap-4 max-w-md mx-auto mb-16">
-            {error && (
-              <div className="w-full p-4 bg-red-500/20 border border-red-500 rounded-lg text-red-100">
-                {error}
-              </div>
-            )}
-
-            {/* Use only RainbowKit's ConnectButton */}
-            <div className="w-full">
-              <ConnectButton.Custom>
-                {({
-                  account,
-                  chain,
-                  openConnectModal,
-                  mounted: rainbowKitMounted,
-                }) => {
-                  const ready = rainbowKitMounted;
-                  
-                  return (
-                    <div
-                      {...(!ready && {
-                        'aria-hidden': true,
-                        'style': {
-                          opacity: 0,
-                          pointerEvents: 'none',
-                          userSelect: 'none',
-                        },
-                      })}
-                      className="w-full"
-                    >
-                      {(() => {
-                        if (!ready || !account) {
-                          return (
-                            <button
-                              onClick={openConnectModal}
-                              className="w-full font-bold py-4 px-6 rounded-lg bg-[#8B5CF6] hover:bg-[#7C3AED] text-white transition-all duration-200"
-                            >
-                              Connect Wallet
-                            </button>
-                          );
-                        }
-
+                return (
+                  <div
+                    {...(!ready && {
+                      'aria-hidden': true,
+                      style: {
+                        opacity: 0,
+                        pointerEvents: 'none',
+                        userSelect: 'none',
+                      },
+                    })}
+                  >
+                    {(() => {
+                      if (!ready || !account) {
                         return (
-                          <div className="w-full py-4 px-6 rounded-lg bg-green-600/20 border border-green-500 text-white font-bold">
-                            ✓ Connected: {account.displayName}
-                          </div>
+                          <button
+                            onClick={openConnectModal}
+                            className="w-full py-3 px-4 bg-[#8B5CF6] rounded-lg"
+                          >
+                            Connect Wallet
+                          </button>
                         );
-                      })()}
-                    </div>
-                  );
-                }}
-              </ConnectButton.Custom>
-            </div>
+                      }
 
+                      return (
+                        <div className="w-full p-4 bg-green-500/20 border border-green-500 rounded-lg">
+                          Connected: {account.displayName}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                );
+              }}
+            </ConnectButton.Custom>
+
+            {/* Twitter Sign In */}
             <button
               onClick={handleTwitterSignIn}
-              disabled={!!session}
-              className={`w-full font-bold py-4 px-6 rounded-lg transition-all duration-200 flex items-center justify-center gap-2
-                ${session 
-                  ? 'bg-green-600 text-white cursor-not-allowed opacity-75' 
-                  : 'bg-[#8B5CF6] hover:bg-[#7C3AED] text-white'}`}
+              disabled={!wagmiAddress || !!session}
+              className={`w-full py-3 px-4 rounded-lg ${
+                !wagmiAddress || !!session
+                  ? 'bg-gray-600 cursor-not-allowed'
+                  : 'bg-[#8B5CF6]'
+              }`}
             >
-              {session ? '✓ Connected with X' : 'Connect with X'}
+              {session ? '✓ Connected with Twitter' : 'Connect with Twitter'}
             </button>
-
-            {/* Connection Status Messages */}
-            {isConnected && !session && (
-              <p className="text-blue-400 text-sm">Please connect your X account to continue</p>
-            )}
-            {!isConnected && session && (
-              <p className="text-blue-400 text-sm">Please connect your wallet to continue</p>
-            )}
           </div>
 
-          {/* Rest of the features grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            <div className="bg-black/30 backdrop-blur-sm p-6 rounded-xl border border-gray-800">
-              <h3 className="text-xl font-bold text-white mb-2">
-                Daily Eliminations
-              </h3>
-              <p className="text-gray-400">
-                3 players eliminated daily until the final survivor emerges
-              </p>
-            </div>
-            
-            <div className="bg-black/30 backdrop-blur-sm p-6 rounded-xl border border-gray-800">
-              <h3 className="text-xl font-bold text-white mb-2">
-                Massive Prize Pool
-              </h3>
-              <p className="text-gray-400">
-                Win up to 50% of the total prize pool as the final survivor
-              </p>
-            </div>
-            
-            <div className="bg-black/30 backdrop-blur-sm p-6 rounded-xl border border-gray-800">
-              <h3 className="text-xl font-bold text-white mb-2">
-                Place Your Bets
-              </h3>
-              <p className="text-gray-400">
-                Bet on players and earn additional rewards
-              </p>
-            </div>
-          </div>
+          {/* Status Messages */}
+          {wagmiAddress && !session && (
+            <p className="text-blue-400 text-center">Now connect your Twitter account</p>
+          )}
+          {!wagmiAddress && (
+            <p className="text-blue-400 text-center">Connect your wallet first</p>
+          )}
         </div>
       </div>
     </div>
