@@ -5,8 +5,6 @@ import { signIn, useSession } from 'next-auth/react';
 import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { ethers } from 'ethers';
-import type { ExternalProvider } from '@ethersproject/providers';
 import { useAccount } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 
@@ -14,41 +12,13 @@ export default function LandingPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  const [address, setAddress] = useState<string>('');
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [error, setError] = useState<string>('');
   const { address: wagmiAddress, isConnected } = useAccount();
   const hasRedirected = useRef(false);
 
   // Mount check
   useEffect(() => {
     setMounted(true);
-
-    // Load saved wallet address from localStorage
-    const savedAddress = localStorage.getItem('walletAddress');
-    if (savedAddress) {
-      setAddress(savedAddress);
-      document.cookie = `walletAddress=${savedAddress}; path=/; max-age=86400; SameSite=Lax`;
-    }
   }, []);
-
-  // Track wallet connection status
-  useEffect(() => {
-    if (!mounted) return;
-
-    if (isConnected && wagmiAddress) {
-      setAddress(wagmiAddress);
-      localStorage.setItem('walletAddress', wagmiAddress);
-      document.cookie = `walletAddress=${wagmiAddress}; path=/; max-age=86400; SameSite=Lax`;
-      console.log('Wallet connected through wagmi:', wagmiAddress);
-    } else {
-      const savedAddress = localStorage.getItem('walletAddress');
-      if (savedAddress) {
-        setAddress(savedAddress);
-        console.log('Using saved wallet address:', savedAddress);
-      }
-    }
-  }, [mounted, isConnected, wagmiAddress]);
 
   // Redirect logic
   useEffect(() => {
@@ -56,84 +26,57 @@ export default function LandingPage() {
 
     console.log('Landing Auth Check:', {
       session: !!session,
-      address,
+      isConnected,
       hasRedirected: hasRedirected.current
     });
 
-    if (session && address) {
+    if (session && isConnected) {
       console.log('Both accounts connected, redirecting to /home');
       hasRedirected.current = true;
       router.replace('/home');
     }
-  }, [mounted, session, address, status, router]);
+  }, [mounted, session, isConnected, status, router]);
 
-  // Handle Twitter sign-in
   const handleTwitterSignIn = async () => {
     try {
-      if (address) {
-        console.log('Wallet connected, proceeding with Twitter sign-in');
-        await signIn('twitter', { callbackUrl: '/home' });
-      } else {
-        await signIn('twitter', { redirect: true });
-      }
+      await signIn('twitter', { callbackUrl: '/home' });
     } catch (error) {
       console.error('Twitter sign-in error:', error);
-      setError('An error occurred during Twitter sign-in.');
     }
   };
 
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen relative bg-[#0D0D0D] overflow-hidden">
+    <div className="min-h-screen relative bg-[#0D0D0D]">
       {/* Banner Background */}
-      <div className="absolute inset-0 z-0 overflow-hidden">
+      <div className="absolute inset-0 z-0">
         <Image
           src="/banner.png"
-          alt="Monad Deathmatch Banner"
+          alt="Background"
           fill
-          className="object-cover object-center opacity-30"
+          className="object-cover opacity-20"
           priority
-          quality={100}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0D0D0D]/70 to-[#0D0D0D]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#0D0D0D]" />
       </div>
 
-      {/* Ana İçerik */}
+      {/* Main Content */}
       <div className="relative z-10 container mx-auto px-4 pt-32 md:pt-40">
         <div className="max-w-4xl mx-auto text-center">
-          {/* Logo */}
-          <div className="mb-8">
-            <Image
-              src="/logo.png"
-              alt="Monad Deathmatch Logo"
-              width={200}
-              height={80}
-              className="mx-auto"
-            />
-          </div>
-
-          <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 text-shadow-lg">
+          <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
             Monad Deathmatch
           </h1>
-          <p className="text-xl md:text-2xl text-gray-300 mb-12 text-shadow">
+          <p className="text-xl md:text-2xl text-gray-300 mb-12">
             Join the ultimate battle for survival and glory
           </p>
 
           {/* Connection Buttons */}
           <div className="flex flex-col items-center gap-4 max-w-md mx-auto mb-16">
-            {error && (
-              <div className="w-full p-4 bg-red-500/20 border border-red-500 rounded-lg text-red-100">
-                {error}
-              </div>
-            )}
-
-            {/* Wallet Connection */}
             <div className="w-full">
               <ConnectButton />
             </div>
 
-            {/* Twitter Sign-In */}
             <button
               onClick={handleTwitterSignIn}
               disabled={!!session}
@@ -144,14 +87,6 @@ export default function LandingPage() {
             >
               {session ? '✓ Connected with X' : 'Connect with X'}
             </button>
-
-            {/* Connection Status Messages */}
-            {isConnected && !session && (
-              <p className="text-blue-400 text-sm">Please connect your X account to continue</p>
-            )}
-            {!isConnected && session && (
-              <p className="text-blue-400 text-sm">Please connect your wallet to continue</p>
-            )}
           </div>
 
           {/* Features Grid */}
@@ -185,9 +120,6 @@ export default function LandingPage() {
           </div>
         </div>
       </div>
-
-      {/* Overlay efekti */}
-      <div className="absolute inset-0 z-0 bg-[#0D0D0D]/20 pointer-events-none" />
     </div>
   );
 }
