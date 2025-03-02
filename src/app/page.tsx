@@ -48,20 +48,21 @@ export default function LandingPage() {
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen relative bg-[#0D0D0D]">
+    <div className="min-h-screen relative bg-[#0D0D0D] overflow-hidden">
       {/* Banner Background */}
-      <div className="absolute inset-0 z-0">
+      <div className="absolute inset-0 z-0 overflow-hidden">
         <Image
           src="/banner.png"
-          alt="Background"
+          alt="Monad Deathmatch Banner"
           fill
-          className="object-cover opacity-20"
+          className="object-cover object-center opacity-30"
           priority
+          quality={100}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#0D0D0D]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0D0D0D]/70 to-[#0D0D0D]" />
       </div>
 
-      {/* Main Content */}
+      {/* Ana İçerik */}
       <div className="relative z-10 container mx-auto px-4 pt-32 md:pt-40">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">

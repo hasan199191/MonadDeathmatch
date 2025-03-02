@@ -1,6 +1,7 @@
 // app/layout.tsx
 'use client';
 
+import '@rainbow-me/rainbowkit/styles.css'; // Bu import en üstte olmalı
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 import { ReactNode } from 'react';
@@ -17,7 +18,7 @@ interface RootLayoutProps {
 
 export default function RootLayout({ children }: RootLayoutProps) {
   const pathname = usePathname();
-  const showNavbar = pathname !== '/'; // Hide navbar on landing page
+  const showNavbar = pathname !== '/';
 
   return (
     <html lang="en">

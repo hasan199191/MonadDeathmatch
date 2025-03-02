@@ -136,3 +136,28 @@ body {
 .navbar-link-active {
   @apply text-[#8B5CF6];
 }
+
+/* RainbowKit Modal Overrides */
+[data-rk] {
+  --rk-colors-modalBackground: #0D0D0D;
+  --rk-colors-modalBackdrop: rgba(0, 0, 0, 0.5);
+  --rk-colors-modalText: white;
+  --rk-colors-modalTextSecondary: #9CA3AF;
+  --rk-colors-modalTextTertiary: #6B7280;
+}
+
+/* Modal animation fix */
+[data-rk] .fadeIn {
+  animation: fadeIn 150ms ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

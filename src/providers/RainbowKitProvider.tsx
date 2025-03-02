@@ -1,32 +1,34 @@
 // providers/RainbowKitProvider.tsx
 'use client';
 
-import { RainbowKitProvider, getDefaultWallets } from '@rainbow-me/rainbowkit';
-import { configureChains, createConfig, WagmiConfig } from 'wagmi';
-import { mainnet, polygon } from 'wagmi/chains';
-import { publicProvider } from 'wagmi/providers/public';
+import { RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
+import '@rainbow-me/rainbowkit/styles.css';
+import { WagmiConfig } from 'wagmi';
+import { useEffect, useState } from 'react';
+import config, { chains } from '@/app/wagmi';
 
-const { chains, publicClient } = configureChains(
-  [mainnet, polygon],
-  [publicProvider()]
-);
+export default function RainbowKitProviderWrapper({ children }) {
+  const [mounted, setMounted] = useState(false);
 
-const { connectors } = getDefaultWallets({
-  appName: 'Monad Deathmatch',
-  projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID!,
-  chains,
-});
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-const wagmiConfig = createConfig({
-  autoConnect: true,
-  connectors,
-  publicClient,
-});
+  if (!mounted) return null;
 
-export default function RainbowKitProviderWrapper({ children }: { children: React.ReactNode }) {
   return (
-    <WagmiConfig config={wagmiConfig}>
-      <RainbowKitProvider chains={chains}>
+    <WagmiConfig config={config}>
+      <RainbowKitProvider
+        chains={chains}
+        theme={darkTheme({
+          accentColor: '#8B5CF6', // Mor tema rengi
+          accentColorForeground: 'white',
+          borderRadius: 'medium',
+          fontStack: 'system',
+          overlayBlur: 'small'
+        })}
+        modalSize="compact"
+      >
         {children}
       </RainbowKitProvider>
     </WagmiConfig>
