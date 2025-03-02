@@ -83,15 +83,24 @@ const getBetTypeFromLocalStorage = (participant: string) => {
   }
 };
 
-const HomePage = () => {
-  const { data: session } = useSession();
-  const { address, isConnected } = useAccount();
+export default function HomePage() {
+  const { data: session, status } = useSession();
   const router = useRouter();
+  const [address, setAddress] = useState<string>('');
   const [betAmount, setBetAmount] = useState('');
   const [betType, setBetType] = useState<string>("top10"); // String olarak saklayın
   const [targetParticipant, setTargetParticipant] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [maxParticipants, setMaxParticipants] = useState<number | null>(null)
+
+  useEffect(() => {
+    const savedAddress = localStorage.getItem('walletAddress');
+    if (!savedAddress || status === 'unauthenticated') {
+      router.replace('/');
+    } else {
+      setAddress(savedAddress);
+    }
+  }, [status, router]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -881,5 +890,3 @@ function Participants({ participants }: ParticipantProps) {
     </div>
   );
 }
-
-export default HomePage;

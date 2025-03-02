@@ -8,39 +8,38 @@ import { ethers } from 'ethers';
 import type { ExternalProvider } from '@ethersproject/providers';
 
 export default function HomePage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [address, setAddress] = useState<string>('');
   const [isConnecting, setIsConnecting] = useState(false);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [error, setError] = useState<string>('');
 
-  // İlk useEffect - Sayfa yüklendiğinde çalışır
   useEffect(() => {
     setMounted(true);
-    // LocalStorage'dan cüzdan adresini kontrol et
     const savedAddress = localStorage.getItem('walletAddress');
     if (savedAddress) {
       setAddress(savedAddress);
-      console.log('Saved wallet address found:', savedAddress); // Debug için
     }
+    setIsLoadingAuth(false);
   }, []);
 
-  // İkinci useEffect - Bağlantı durumlarını kontrol eder
   useEffect(() => {
-    if (!mounted) return;
+    if (!mounted || status === 'loading') return;
 
     const checkAndRedirect = async () => {
-      console.log('Checking connections:', { address, session }); // Debug için
-
-      if (address && session) {
-        console.log('Both connected, redirecting to /home'); // Debug için
-        await router.push('/home');
+      if (address && session?.user) {
+        try {
+          await router.replace('/home');
+        } catch (error) {
+          console.error('Redirect error:', error);
+        }
       }
     };
 
     checkAndRedirect();
-  }, [mounted, address, session, router]);
+  }, [mounted, address, session, router, status]);
 
   const connectMetaMask = async () => {
     try {
@@ -48,26 +47,29 @@ export default function HomePage() {
       setError('');
 
       if (!window.ethereum) {
-        throw new Error('MetaMask is not installed!');
+        throw new Error('Please install MetaMask!');
       }
 
       const provider = new ethers.providers.Web3Provider(
         window.ethereum as unknown as ExternalProvider
       );
 
-      await provider.send("eth_requestAccounts", []);
+      const network = await provider.getNetwork();
+      const requiredChainId = process.env.NEXT_PUBLIC_CHAIN_ID;
+      
+      if (network.chainId.toString() !== requiredChainId) {
+        throw new Error(`Please switch to Monad Testnet (Chain ID: ${requiredChainId})`);
+      }
+
+      const accounts = await provider.send("eth_requestAccounts", []);
       const signer = provider.getSigner();
       const walletAddress = await signer.getAddress();
       
       setAddress(walletAddress);
       localStorage.setItem('walletAddress', walletAddress);
 
-      console.log('Wallet connected:', walletAddress); // Debug için
-
-      // Twitter bağlı ise hemen yönlendir
-      if (session) {
-        console.log('Twitter already connected, redirecting...'); // Debug için
-        await router.push('/home');
+      if (session?.user) {
+        await router.replace('/home');
       }
 
     } catch (error: any) {
