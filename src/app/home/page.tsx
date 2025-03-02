@@ -92,6 +92,7 @@ export default function HomePage() {
   const [targetParticipant, setTargetParticipant] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [maxParticipants, setMaxParticipants] = useState<number | null>(null)
+  const [isWalletConnected, setIsWalletConnected] = useState(false);
 
   useEffect(() => {
     const savedAddress = localStorage.getItem('walletAddress');
@@ -99,6 +100,7 @@ export default function HomePage() {
       router.replace('/');
     } else {
       setAddress(savedAddress);
+      setIsWalletConnected(true);
     }
   }, [status, router]);
 
@@ -114,7 +116,7 @@ export default function HomePage() {
   // Add this effect to link Twitter and wallet if both are connected
   useEffect(() => {
     const linkTwitterWithWallet = async () => {
-      if (session?.user && isConnected && address) {
+      if (session?.user && isWalletConnected && address) {
         try {
           await fetch('/api/user/connect-twitter', {
             method: 'POST',
@@ -122,18 +124,18 @@ export default function HomePage() {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              walletAddress: address,
-            }),
+              address: address,
+              twitterId: session.user.id
+            })
           });
-          console.log("Twitter account linked with wallet");
         } catch (error) {
-          console.error("Error linking Twitter with wallet:", error);
+          console.error('Error linking accounts:', error);
         }
       }
     };
-    
+
     linkTwitterWithWallet();
-  }, [session, isConnected, address]);
+  }, [session, address, isWalletConnected]);
 
   useEffect(() => {
     const connectTwitterWithWallet = async () => {
