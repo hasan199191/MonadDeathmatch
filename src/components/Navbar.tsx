@@ -3,37 +3,16 @@ import { usePathname } from 'next/navigation';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
-import { useSession } from 'next-auth/react';
 
 export const Navbar = () => {
   const pathname = usePathname();
-  const { data: session } = useSession();
   const { address: wagmiAddress, isConnected } = useAccount();
   const [mounted, setMounted] = useState(false);
-  const [address, setAddress] = useState<string>('');
 
   useEffect(() => {
-    if (!mounted) {
-      setMounted(true);
-      return;
-    }
+    setMounted(true);
+  }, []);
 
-    // LocalStorage'dan cüzdan adresini al
-    const savedAddress = localStorage.getItem('walletAddress');
-    
-    // Eğer wallet bağlıysa güncelle
-    if (isConnected && wagmiAddress) {
-      setAddress(wagmiAddress);
-      localStorage.setItem('walletAddress', wagmiAddress);
-      document.cookie = `walletAddress=${wagmiAddress}; path=/; max-age=86400; SameSite=Lax`;
-    }
-    // Değilse kayıtlı adresi kullan
-    else if (savedAddress) {
-      setAddress(savedAddress);
-    }
-  }, [mounted, isConnected, wagmiAddress]);
-
-  // Sayfa yüklenmeden gösterme
   if (!mounted) return null;
 
   return (
@@ -45,18 +24,22 @@ export const Navbar = () => {
             <Link href="/home" className="text-[#8B5CF6] font-bold text-xl">
               Monad Deathmatch
             </Link>
-            <div className="flex items-center gap-6">
-              <Link 
-                href="/home" 
-                className={`navbar-link ${pathname === '/home' ? 'navbar-link-active' : ''}`}
-              >
-                Home
-              </Link>
+            <div className="hidden md:flex items-center gap-6">
               <Link 
                 href="/rules" 
-                className={`navbar-link ${pathname === '/rules' ? 'navbar-link-active' : ''}`}
+                className={`text-gray-300 hover:text-[#8B5CF6] transition-colors ${
+                  pathname === '/rules' ? 'text-[#8B5CF6]' : ''
+                }`}
               >
                 Rules
+              </Link>
+              <Link 
+                href="/home" 
+                className={`text-gray-300 hover:text-[#8B5CF6] transition-colors ${
+                  pathname === '/home' ? 'text-[#8B5CF6]' : ''
+                }`}
+              >
+                Home
               </Link>
             </div>
           </div>
