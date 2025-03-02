@@ -1,3 +1,6 @@
+/* RainbowKit özelleştirmeleri en üstte olmalı */
+@import '@rainbow-me/rainbowkit/styles.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -149,7 +152,18 @@ body {
   @apply text-[#8B5CF6];
 }
 
-/* RainbowKit Modal Overrides */
+/* RainbowKit Modal Özelleştirmesi */
+[data-rk] {
+  --rk-colors-accentColor: var(--color-primary);
+  --rk-colors-connectButtonBackground: var(--color-primary);
+  --rk-colors-connectButtonText: var(--color-text);
+  --rk-colors-modalBackground: var(--color-surface);
+  --rk-colors-modalText: var(--color-text);
+  --rk-colors-modalTextSecondary: var(--color-text-secondary);
+  --rk-radii-connectButton: var(--radius-md);
+  --rk-fonts-body: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+
 [data-rk] {
   --rk-colors-modalBackground: #0D0D0D;
   --rk-colors-modalBackdrop: rgba(0, 0, 0, 0.8);
@@ -188,23 +202,35 @@ body {
   box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
 }
 
-/* Banner Image */
+/* Banner ve gradient stilleri */
 .banner-image {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  opacity: 0.3;
-  object-fit: cover;
+  @apply absolute inset-0 z-0 opacity-30 object-cover select-none;
 }
 
-/* Banner Gradient */
 .banner-overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to bottom,
-    transparent,
-    rgba(13, 13, 13, 0.7),
-    #0D0D0D
-  );
+  @apply absolute inset-0 z-10 bg-gradient-to-b from-transparent 
+         via-black/70 to-black;
+}
+
+/* Button stilleri */
+.auth-button {
+  @apply w-full px-6 py-3 rounded-lg font-medium transition-colors;
+}
+
+.auth-button-primary {
+  @apply bg-[#8B5CF6] hover:bg-[#7C3AED] text-white;
+}
+
+.auth-button-success {
+  @apply bg-green-600 text-white cursor-not-allowed;
+}
+
+/* RainbowKit özelleştirmeleri */
+[data-rk] {
+  --rk-colors-accentColor: #8B5CF6;
+  --rk-colors-connectButtonBackground: #8B5CF6;
+  --rk-colors-connectButtonText: white;
+  --rk-colors-modalBackground: #0D0D0D;
+  --rk-colors-modalText: white;
+  --rk-radii-connectButton: 0.5rem;
 }
