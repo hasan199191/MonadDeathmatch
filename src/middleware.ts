@@ -12,25 +12,27 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  console.log('Middleware PATH:', request.nextUrl.pathname);
-  
   // Ana sayfa için auth kontrolü
   if (request.nextUrl.pathname === '/home') {
-    const token = await getToken({ 
-      req: request, 
-      secret: process.env.NEXTAUTH_SECRET 
-    });
-    
-    const walletAddress = request.cookies.get('walletAddress')?.value;
-    
-    console.log('Middleware Check:', {
-      path: request.nextUrl.pathname,
-      hasToken: !!token,
-      hasWallet: !!walletAddress
-    });
-    
-    if (!token || !walletAddress) {
-      console.log('Unauthorized, redirecting to landing...');
+    try {
+      const token = await getToken({ 
+        req: request,
+        secret: process.env.NEXTAUTH_SECRET 
+      });
+      
+      const walletAddress = request.cookies.get('walletAddress')?.value;
+      
+      console.log('Middleware Check:', {
+        path: request.nextUrl.pathname,
+        hasToken: !!token,
+        hasWallet: !!walletAddress
+      });
+      
+      if (!token || !walletAddress) {
+        return NextResponse.redirect(new URL('/', request.url));
+      }
+    } catch (error) {
+      console.error('Middleware error:', error);
       return NextResponse.redirect(new URL('/', request.url));
     }
   }
