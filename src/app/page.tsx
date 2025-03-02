@@ -1,29 +1,57 @@
 'use client';
 
-import Image from 'next/image';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSession, signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useAccount } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
+import Image from 'next/image';
 
 export default function LandingPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const { address: wagmiAddress, isConnected } = useAccount();
   const hasRedirected = useRef(false);
+  const [error, setError] = useState<string>('');
+
+  // Twitter giriş işleyicisi
+  const handleTwitterSignIn = async () => {
+    try {
+      if (!isConnected || !wagmiAddress) {
+        setError('Please connect your wallet first');
+        return;
+      }
+
+      // Wallet adresini localStorage'a kaydet
+      localStorage.setItem('walletAddress', wagmiAddress);
+      document.cookie = `walletAddress=${wagmiAddress}; path=/; max-age=86400; SameSite=Lax`;
+
+      console.log('Starting Twitter sign in...');
+      await signIn('twitter', { 
+        callbackUrl: '/home',
+        redirect: true
+      });
+    } catch (err) {
+      console.error('Twitter sign in error:', err);
+      setError('Failed to connect with Twitter');
+    }
+  };
 
   // Yönlendirme mantığı
   useEffect(() => {
     if (status === 'loading') return;
     if (hasRedirected.current) return;
 
-    console.log('Auth Check:', { session, isConnected });
+    console.log('Auth Check:', { 
+      session: !!session, 
+      isConnected, 
+      hasRedirected: hasRedirected.current 
+    });
 
-    if (isConnected && session) {
+    if (session && isConnected) {
       hasRedirected.current = true;
       console.log('Redirecting to home...');
-      router.push('/home');
+      router.replace('/home');
     }
   }, [isConnected, session, status, router]);
 
@@ -51,6 +79,13 @@ export default function LandingPage() {
           <p className="text-xl md:text-2xl text-gray-300 mb-12">
             Join the ultimate battle for survival and glory
           </p>
+
+          {/* Error Message */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-500/20 border border-red-500 rounded-lg text-red-100">
+              {error}
+            </div>
+          )}
 
           {/* Connection Buttons */}
           <div className="flex flex-col items-center gap-4 max-w-md mx-auto mb-16">
@@ -102,14 +137,22 @@ export default function LandingPage() {
 
             <button
               onClick={handleTwitterSignIn}
-              disabled={!!session}
+              disabled={!isConnected || !!session}
               className={`w-full h-[48px] font-bold px-6 rounded-lg transition-all duration-200 flex items-center justify-center gap-2
-                ${session 
-                  ? 'bg-green-600/20 border border-green-500 text-white cursor-not-allowed' 
-                  : 'bg-[#8B5CF6] hover:bg-[#7C3AED] text-white'}`}
+                ${!isConnected || !!session
+                  ? 'bg-gray-600 cursor-not-allowed opacity-50'
+                  : 'bg-[#8B5CF6] hover:bg-[#7C3AED]'} text-white`}
             >
               {session ? '✓ Connected with X' : 'Connect with X'}
             </button>
+
+            {/* Status Messages */}
+            {!isConnected && (
+              <p className="text-blue-400 text-sm">Please connect your wallet first</p>
+            )}
+            {isConnected && !session && (
+              <p className="text-blue-400 text-sm">Now connect your Twitter account</p>
+            )}
           </div>
 
           {/* Features Grid */}
