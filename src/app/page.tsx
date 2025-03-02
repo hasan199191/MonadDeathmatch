@@ -185,6 +185,15 @@ export default function LandingPage() {
             )}
           </div>
 
+          {/* Cüzdan Bağlantı Butonu */}
+          {!isConnected ? (
+            <ConnectButton />
+          ) : (
+            <div className="px-4 py-2 bg-[#8B5CF6]/20 border border-[#8B5CF6] rounded-lg text-white">
+              Connected: {wagmiAddress?.slice(0, 6)}...{wagmiAddress?.slice(-4)}
+            </div>
+          )}
+
           {/* Features Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
             <div className="bg-black/30 backdrop-blur-sm p-6 rounded-xl border border-gray-800">

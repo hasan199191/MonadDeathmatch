@@ -87,7 +87,7 @@ export default function HomePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  const { address: wagmiAddress, isConnected: isWagmiConnected } = useAccount(); // Wagmi hookunu ekleyin
+  const { address: wagmiAddress, isConnected } = useAccount(); // Wagmi hookunu ekleyin
   const [address, setAddress] = useState<string>('');
   const [betAmount, setBetAmount] = useState('');
   const [betType, setBetType] = useState<string>("top10"); // String olarak saklayın
@@ -126,12 +126,12 @@ export default function HomePage() {
     }
     
     // Sadece session veya cüzdan yoksa yönlendir
-    if (!session || (!isWagmiConnected && !savedAddress)) {
+    if (!session || (!isConnected && !savedAddress)) {
       console.log('Missing auth, redirecting to landing page');
       hasRedirected.current = true;
       router.replace('/');
     }
-  }, [mounted, session, status, isWagmiConnected, router]);
+  }, [mounted, session, status, isConnected, router]);
   
   // DİĞER useEffect'lerdeki REDIRECT KODLARINI KALDIRIN
   
@@ -287,7 +287,7 @@ export default function HomePage() {
     functionName: 'joinPool',
     args: [BigInt(1)],
     value: parseEther('1'),
-    enabled: isWagmiConnected && !isUserParticipant, // isUserParticipant kullan
+    enabled: isConnected && !isUserParticipant, // isUserParticipant kullan
   });
 
   const { write: joinPool, isLoading: isJoining, data: joinTx } = useContractWrite(joinConfig);
@@ -334,7 +334,7 @@ export default function HomePage() {
 
   // DÜZELTME 3: handleBet fonksiyonunu düzeltiyoruz
   const handleBet = useCallback((participant: string) => {
-    if (!isWagmiConnected) {
+    if (!isConnected) {
       toast.error('Please connect your wallet first');
       return;
     }
@@ -365,11 +365,11 @@ export default function HomePage() {
         toast.error('Failed to place bet');
       }
     }, 100);
-  }, [isWagmiConnected, betAmount, betType, placeBet]);
+  }, [isConnected, betAmount, betType, placeBet]);
 
   // handleJoin fonksiyonu
   const handleJoin = useCallback(() => {
-    if (!isWagmiConnected) {
+    if (!isConnected) {
       toast.error('Please connect your wallet first');
       return;
     }
@@ -392,7 +392,7 @@ export default function HomePage() {
       console.error('Join error:', error);
       toast.error('Failed to join pool');
     }
-  }, [isWagmiConnected, isUserParticipant, balance, joinPool]);
+  }, [isConnected, isUserParticipant, balance, joinPool]);
 
   // Calculated values - totalPrize hesaplamasını güncelliyoruz
   const totalPrize = useMemo(() => {
@@ -489,7 +489,7 @@ export default function HomePage() {
               <span className="text-red-500 ml-1 flex items-center">
                 Inactive
                 <svg className="w-3 h-3 ml-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"></path>
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 001.414 1.414L10 11.414l1.293 1.293a1 1 001.414-1.414L11.414 10l1.293-1.293a1 1 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"></path>
                 </svg>
               </span>
             )}
@@ -567,12 +567,21 @@ export default function HomePage() {
     setEnrichedParticipants(enriched);
   }, [participants]);
 
+  // Eğer cüzdan bağlı değilse ana sayfaya yönlendir
+  useEffect(() => {
+    if (!isConnected && mounted) {
+      router.replace('/');
+    }
+  }, [isConnected, mounted, router]);
+
+  if (!mounted || !isConnected) return null;
+
   if (!isMounted) {
     return null;
   }
 
   return (
-    <div className="min-h-screen bg-[#0D0D0D] px-5 pt-16"> {/* pt-16 ekledim - navbar için yer açmak üzere */}
+    <div className="container mx-auto px-4 pt-20">
       <Navbar />
       <main className="container mx-auto p-5 max-w-[1280px]"> {/* pt-6 ve lg:pt-10 değerlerini kaldırdık çünkü pt-16 yeterli */}
         {/* Ana Grid Yapısı */}

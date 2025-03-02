@@ -5,7 +5,8 @@ import "./globals.css";
 import { ReactNode } from 'react';
 import { SessionProvider } from "next-auth/react";
 import RainbowKitProviderWrapper from '@/providers/RainbowKitProvider';
-import Navbar from '@/components/Navbar'; // Doğru import
+import Navbar from '@/components/Navbar';
+import { usePathname } from 'next/navigation';
 
 const plusJakartaSans = Plus_Jakarta_Sans({ subsets: ['latin'] });
 
@@ -14,13 +15,16 @@ interface RootLayoutProps {
 }
 
 export default function RootLayout({ children }: RootLayoutProps) {
+  const pathname = usePathname();
+  const showNavbar = pathname !== '/'; // Ana sayfada navbar'ı gizle
+
   return (
     <html lang="en">
       <body className={plusJakartaSans.className}>
         <SessionProvider>
           <RainbowKitProviderWrapper>
-            <Navbar /> {/* Navbar bileşeni burada */}
-            <main className="pt-16"> {/* Navbar için padding ekleyin */}
+            {showNavbar && <Navbar />} {/* Koşullu render */}
+            <main className={showNavbar ? "pt-16" : ""}>
               {children}
             </main>
           </RainbowKitProviderWrapper>
