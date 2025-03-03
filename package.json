@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "pnpm clean && next build",
     "start": "next start",
     "lint": "next lint",
     "prisma:generate": "prisma generate",
@@ -12,7 +12,8 @@
     "prisma:studio": "prisma studio",
     "prisma": {
       "seed": "ts-node --transpile-only prisma/seed.ts"
-    }
+    },
+    "clean": "rimraf .next"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.10.4",
