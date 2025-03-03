@@ -28,6 +28,7 @@ import EliminatedPlayers from '@/components/EliminatedPlayers';
 import EliminationTimer from '@/components/EliminationTimer';
 import { createPublicClient, http } from 'viem'
 import { monad } from '@/config/chains'
+import { supabase } from '@/lib/supabase';
 
 // Tip tanımlamalarını dosyanın başına taşıyalım
 interface Bet {
@@ -50,6 +51,15 @@ interface User {
   walletAddress: string;
   twitterUsername?: string | null;
   profileImageUrl?: string | null;
+}
+
+interface Participant {
+  id: string;
+  wallet_address: string;
+  twitter_username: string;
+  twitter_profile_image: string;
+  is_active: boolean;
+  joined_at: string;
 }
 
 // 1. localStorage kullanarak bahisleri takip etmek için bir utils fonksiyonu oluşturun
@@ -97,6 +107,8 @@ export default function HomePage() {
   const [isWalletConnected, setIsWalletConnected] = useState(false);
   const hasRedirected = useRef(false);
   const hasAttemptedRedirect = useRef(false);
+  const [participants, setParticipants] = useState<Participant[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // TEK BİR AUTH KONTROLÜ
   useEffect(() => {
@@ -238,7 +250,7 @@ export default function HomePage() {
     watch: true,
   });
 
-  const { data: participants } = useContractRead({
+  const { data: participantsData } = useContractRead({
     address: MONAD_DEATHMATCH_ADDRESS,
     abi: MONAD_DEATHMATCH_ABI,
     functionName: 'getParticipants',
@@ -254,11 +266,11 @@ export default function HomePage() {
 
   // DÜZELTME 1: Kullanıcının katılım durumunu participants listesi üzerinden manuel kontrol edelim
   const isUserParticipant = useMemo(() => {
-    if (!address || !participants) return false;
-    return participants.some(
+    if (!address || !participantsData) return false;
+    return participantsData.some(
       (participant) => participant.toLowerCase() === address.toLowerCase()
     );
-  }, [address, participants]);
+  }, [address, participantsData]);
 
   // Kullanıcının aktif bahisleri
   const { data: userBets } = useContractRead({
@@ -483,14 +495,14 @@ export default function HomePage() {
               <span className="text-[#8B5CF6] ml-1 flex items-center">
                 Active
                 <svg className="w-3 h-3 ml-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 00-1.414 1.414l2 2a1 1 001.414 0l4-4z" clipRule="evenodd"></path>
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 000 16zm3.707-9.293a1 1 000-1.414-1.414L9 10.586 7.707 9.293a1 1 00-1.414 1.414l2 2a1 1 001.414 0l4-4z" clipRule="evenodd"></path>
                 </svg>
               </span>
             ) : (
               <span className="text-red-500 ml-1 flex items-center">
                 Inactive
                 <svg className="w-3 h-3 ml-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 001.414 1.414L10 11.414l1.293 1.293a1 1 001.414-1.414L11.414 10l1.293-1.293a1 1 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"></path>
+                  <path fillRule="evenodd" d="M10 18a8 8 000-16 8 8 000 16zM8.707 7.293a1 1 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 001.414 1.414L10 11.414l1.293 1.293a1 1 001.414-1.414L11.414 10l1.293-1.293a1 1 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"></path>
                 </svg>
               </span>
             )}
@@ -525,12 +537,12 @@ export default function HomePage() {
         const users: User[] = await response.json();
         
         // participants'in tanımlı olup olmadığını kontrol et
-        if (!participants) {
+        if (!participantsData) {
           console.log("Katılımcı listesi henüz yüklenmedi.");
           return;
         }
         
-        const enriched = participants.map(participant => {
+        const enriched = participantsData.map(participant => {
           const userMatch = users.find(
             (user: User) => user.walletAddress.toLowerCase() === participant.toLowerCase()
           );
@@ -549,14 +561,14 @@ export default function HomePage() {
     };
     
     fetchTwitterData();
-  }, [participants]);
+  }, [participantsData]);
 
   // Katılımcı listesini zenginleştirmek için geçici çözüm
   useEffect(() => {
-    if (!participants || participants.length === 0) return;
+    if (!participantsData || participantsData.length === 0) return;
     
     // Mock veriler oluştur
-    const enriched = participants.map((participant, index) => {
+    const enriched = participantsData.map((participant, index) => {
       return {
         address: participant,
         twitterUsername: `user${index}`,
@@ -566,7 +578,7 @@ export default function HomePage() {
     });
     
     setEnrichedParticipants(enriched);
-  }, [participants]);
+  }, [participantsData]);
 
   // Eğer cüzdan bağlı değilse ana sayfaya yönlendir
   useEffect(() => {
@@ -610,6 +622,33 @@ export default function HomePage() {
   if (!isMounted) {
     return null;
   }
+
+  useEffect(() => {
+    async function fetchParticipants() {
+      try {
+        const { data, error } = await supabase
+          .from('participants')
+          .select('*')
+          .eq('is_active', true)
+          .order('joined_at', { ascending: false });
+
+        if (error) throw error;
+
+        // Smart contract'taki adreslerle eşleştir
+        const activeParticipants = data?.filter(participant => 
+          participantsData?.includes(participant.wallet_address)
+        );
+
+        setParticipants(activeParticipants || []);
+      } catch (error) {
+        console.error('Error loading participants:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchParticipants();
+  }, [participantsData]);
 
   return (
     <div className="min-h-screen relative bg-[#0D0D0D]">
@@ -698,99 +737,58 @@ export default function HomePage() {
               </div>
 
               {/* Participants List */}
-              <div className="bg-[#1A1A1A] rounded-xl p-6">
-                <h2 className="text-lg font-semibold text-white mb-4">Participants</h2>
-                <div className="space-y-3">
-                  {participants && participants.length > 0 ? (
-                    enrichedParticipants.map((participant, index) => (
+              <div className="bg-[#1A1A1A] p-6 rounded-xl border border-[#262626]">
+                <h2 className="text-2xl font-semibold mb-4">
+                  Participants ({participants.length})
+                </h2>
+                
+                {loading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#8B5CF6] border-t-transparent"></div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {participants.map((user) => (
                       <div 
-                        key={participant.address} 
-                        className={`flex items-center justify-between p-4 rounded-lg transition-colors
-                          ${participant.isEliminated 
-                            ? 'bg-[#1A1A1A] opacity-50' 
-                            : 'bg-[#222222] hover:bg-[#2a2a2a]'
-                          }`}
+                        key={user.id}
+                        className="bg-[#262626] p-4 rounded-lg flex items-center gap-4 hover:bg-[#333333] transition-colors"
                       >
-                        {/* Kullanıcı bilgileri bölümü */}
-                        <div className="flex items-center gap-4">
-                          {/* Profil resmi */}
-                          {participant.profileImageUrl ? (
-                            <img 
-                              src={participant.profileImageUrl} 
-                              alt="X Profile"
-                              className="w-12 h-12 rounded-full object-cover border-2 border-[#333]"
-                            />
-                          ) : (
-                            <div className="w-12 h-12 bg-gray-600 rounded-full border-2 border-[#333]" />
+                        {/* Profile Image */}
+                        <div className="relative h-12 w-12 rounded-full overflow-hidden">
+                          <Image
+                            src={user.twitter_profile_image || '/default-avatar.png'}
+                            alt={user.twitter_username || 'User'}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+
+                        {/* User Info */}
+                        <div className="flex-1">
+                          {user.twitter_username && (
+                            <a
+                              href={`https://twitter.com/${user.twitter_username.replace('@', '')}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[#8B5CF6] hover:underline font-medium"
+                            >
+                              {user.twitter_username}
+                            </a>
                           )}
-                          
-                          {/* Kullanıcı adı ve cüzdan adresi yan yana */}
-                          <div className="flex items-center gap-2">
-                            {participant.twitterUsername ? (
-                              <span className="text-lg text-blue-400 font-medium">
-                                @{participant.twitterUsername}
-                              </span>
-                            ) : (
-                              <span className="text-lg text-gray-400 font-medium">
-                                Anonymous
-                              </span>
-                            )}
-                            
-                            <span className="text-base text-gray-400">
-                              {shortenAddress(participant.address)}
-                            </span>
-                            
-                            {participant.address.toLowerCase() === address?.toLowerCase() && (
-                              <span className="text-xs bg-[#8B5CF6] px-2 py-1 rounded text-white font-medium">
-                                YOU
-                              </span>
-                            )}
+                          <div className="text-sm text-gray-400 font-mono">
+                            {user.wallet_address.slice(0, 6)}...
+                            {user.wallet_address.slice(-4)}
                           </div>
                         </div>
 
-                        {/* Bahis kontrolleri */}
-                        <div className="flex items-center gap-3">
-                          <input
-                            type="number"
-                            step="0.1"
-                            min="0.1"
-                            max="10"
-                            value={betAmount}
-                            onChange={(e) => setBetAmount(e.target.value)}
-                            placeholder="0.1"
-                            className="w-24 bg-[#333333] text-base px-3 py-2 rounded-md text-white focus:ring-1 focus:ring-[#8B5CF6] transition-all"
-                          />
-                          
-                          <select
-                            value={betType}
-                            onChange={(e) => setBetType(e.target.value)}
-                            className="w-28 bg-[#333333] text-base px-3 py-2 rounded-md text-white focus:ring-1 focus:ring-[#8B5CF6] transition-all"
-                          >
-                            <option value="top10">Top 10</option>
-                            <option value="finalWinner">Final</option>
-                          </select>
-                          
-                          <button
-                            onClick={() => handleBet(participant.address)}
-                            disabled={isBetting || !betAmount || Number(betAmount) < 0.1}
-                            className="text-base px-6 py-2 bg-[#8B5CF6] hover:bg-[#7C3AED] rounded-md transition-all text-white font-medium disabled:bg-gray-600 disabled:opacity-50 min-w-[100px]"
-                          >
-                            {isBetting ? '...' : 'Bet'}
-                          </button>
+                        {/* Join Date */}
+                        <div className="text-xs text-gray-500">
+                          {new Date(user.joined_at).toLocaleDateString()}
                         </div>
-                        {participant.isEliminated && (
-                          <span className="text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded">
-                            Eliminated
-                          </span>
-                        )}
                       </div>
-                    ))
-                  ) : (
-                    <div className="text-center text-gray-400 py-4 text-base">
-                      No participants in the arena yet.
-                    </div>
-                  )}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 

@@ -2,8 +2,13 @@
 
 # dependencies
 /node_modules
-/.pnp
-.pnp.js
+
+# env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # testing
 /coverage
@@ -14,13 +19,6 @@
 
 # production
 /build
-
-# env files
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
 
 # debug
 npm-debug.log*
