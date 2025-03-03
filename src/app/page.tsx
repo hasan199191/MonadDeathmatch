@@ -34,14 +34,25 @@ export default function LandingPage() {
     async function saveUserData() {
       if (isConnected && wagmiAddress && session?.user) {
         try {
-          await supabase.from('participants').upsert({
-            wallet_address: wagmiAddress,
-            twitter_username: session.user.name,
-            twitter_profile_image: session.user.image,
-            updated_at: new Date().toISOString()
-          });
+          const { error } = await supabase
+            .from('participants')
+            .upsert({
+              wallet_address: wagmiAddress,
+              twitter_username: session.user.name,
+              twitter_profile_image: session.user.image,
+              updated_at: new Date().toISOString(),
+              is_active: true,
+              joined_pool: false
+            });
+
+          if (error) {
+            console.error('Veri kaydederken hata:', error);
+            return;
+          }
+
+          console.log('Kullanıcı verileri kaydedildi');
         } catch (error) {
-          console.error('Error saving user data:', error);
+          console.error('Veri kaydederken hata:', error);
         }
       }
     }
