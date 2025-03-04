@@ -1,4 +1,29 @@
-'use client';
+"use client";
+
+import { useEffect } from 'react';
+import { useSession } from "next-auth/react";
+
+export default function HomePage() {
+  const { data: session, status } = useSession({
+    required: true,
+    onUnauthenticated() {
+      window.location.href = '/';
+    },
+  });
+
+  // İlk yükleme kontrolü
+  if (status === 'loading') {
+    return <div>Yükleniyor...</div>;
+  }
+
+  // Session yoksa null dön
+  if (!session) return null;
+
+  // Normal içerik
+  return (
+    // ... mevcut içerik
+  );
+}
 
 import { useRouter } from 'next/navigation';
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
@@ -19,7 +44,6 @@ import { toast } from 'react-hot-toast';
 import { Navbar } from '@/components/Navbar';
 import { shortenAddress } from '@/utils/address';
 import Image from 'next/image';
-import { useSession } from "next-auth/react";
 import { getToken } from "next-auth/jwt";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
