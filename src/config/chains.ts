@@ -1,4 +1,4 @@
-import { Chain } from 'viem'
+import { Chain } from 'wagmi'
 
 export const monad = {
   id: 10143,
@@ -6,15 +6,19 @@ export const monad = {
   network: 'monad-testnet',
   nativeCurrency: {
     decimals: 18,
-    name: 'MON',
+    name: 'Monad',
     symbol: 'MON',
   },
   rpcUrls: {
-    default: {
-      http: ['https://rpc.testnet.monad.xyz/'],
-    },
-    public: {
-      http: ['https://rpc.testnet.monad.xyz/'],
+    // Update RPC URLs to correct testnet endpoint
+    public: { http: ['https://testnet-rpc.monad.xyz/'] },
+    default: { http: ['https://testnet-rpc.monad.xyz/'] },
+  },
+  blockExplorers: {
+    // Update explorer URL
+    default: { 
+      name: 'MonadExplorer', 
+      url: 'https://testnet.monadexplorer.com/' 
     },
   },
 } as const satisfies Chain
