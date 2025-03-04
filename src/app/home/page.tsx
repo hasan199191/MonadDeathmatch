@@ -554,8 +554,10 @@ export default function HomePage() {
         });
         
         setEnrichedParticipants(enriched);
+        setLoading(false);
       } catch (error) {
-        console.error("Kullanıcı verilerini getirirken hata:", error);
+        console.error("Failed to fetch user data:", error);
+        setLoading(false);
       }
     };
     
@@ -648,6 +650,14 @@ export default function HomePage() {
 
     fetchParticipants();
   }, [participantsData]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center">
+        <div className="text-white">Katılımcılar yükleniyor...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen relative bg-[#0D0D0D]">
