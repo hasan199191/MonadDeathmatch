@@ -5,7 +5,7 @@ import { WagmiConfig, createConfig, configureChains } from 'wagmi';
 import { publicProvider } from 'wagmi/providers/public';
 import {
   getDefaultWallets,
-  RainbowKitProvider,
+  RainbowKitProvider as RKProvider,
   darkTheme,
 } from '@rainbow-me/rainbowkit';
 import '@rainbow-me/rainbowkit/styles.css';
@@ -52,7 +52,7 @@ export default function RainbowKitProviderWrapper({
 }: RainbowKitProviderWrapperProps) {
   return (
     <WagmiConfig config={config}>
-      <RainbowKitProvider
+      <RKProvider
         chains={chains}
         theme={darkTheme({
           accentColor: '#8B5CF6',
@@ -60,7 +60,7 @@ export default function RainbowKitProviderWrapper({
         })}
       >
         {children}
-      </RainbowKitProvider>
+      </RKProvider>
     </WagmiConfig>
   );
 }

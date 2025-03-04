@@ -1,49 +1,29 @@
-import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { NextResponse } from "next/server";
+import { supabase } from "@/lib/supabase"; // Prisma yerine Supabase client'ı kullanın
 
-const prisma = new PrismaClient();
-
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    const { walletAddress, twitterUsername, twitterId, twitterProfileImage } = await request.json();
-
-    // Gerekli alanları kontrol et
-    if (!walletAddress || !twitterUsername) {
-      return NextResponse.json({
-        success: false,
-        error: 'Cüzdan adresi ve Twitter kullanıcı adı gerekli'
-      }, { status: 400 });
+    const { walletAddress, twitterId } = await req.json();
+    
+    // Prisma yerine Supabase ile kullanıcıyı bağla
+    const { data, error } = await supabase
+      .from('participants')
+      .upsert({
+        wallet_address: walletAddress,
+        twitter_id: twitterId,
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'wallet_address'
+      });
+    
+    if (error) {
+      console.error('Supabase error:', error);
+      return NextResponse.json({ error: 'Failed to connect accounts' }, { status: 500 });
     }
-
-    // Kullanıcıyı oluştur veya güncelle
-    const user = await prisma.user.upsert({
-      where: { walletAddress },
-      update: {
-        twitterUsername,
-        twitterId,
-        twitterProfileImage,
-        updatedAt: new Date()
-      },
-      create: {
-        walletAddress,
-        twitterUsername,
-        twitterId,
-        twitterProfileImage
-      }
-    });
-
-    console.log('Kullanıcı kaydedildi:', user);
-
-    return NextResponse.json({
-      success: true,
-      user
-    });
-
+    
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Veritabanı hatası:', error);
-    return NextResponse.json({
-      success: false,
-      error: 'Kullanıcı kaydedilemedi'
-    }, { status: 500 });
+    console.error('API error:', error);
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }
