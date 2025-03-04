@@ -109,6 +109,7 @@ export default function HomePage() {
   const hasAttemptedRedirect = useRef(false);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userBets, setUserBets] = useState({});
 
   // TEK BİR AUTH KONTROLÜ
   useEffect(() => {
