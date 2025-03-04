@@ -110,6 +110,7 @@ export default function HomePage() {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
   const [userBets, setUserBets] = useState({});
+  const [localStorageBets, setLocalStorageBets] = useState({});
 
   // TEK BİR AUTH KONTROLÜ
   useEffect(() => {
@@ -122,38 +123,27 @@ export default function HomePage() {
     if (status === 'loading') return;
     if (hasRedirected.current) return;
     
-    console.log('HOME PAGE AUTH CHECK:', {
-      session: !!session,
-      status,
-      address,
-      savedAddress: localStorage.getItem('walletAddress'),
-      cookies: document.cookie
-    });
-    
-    const savedAddress = localStorage.getItem('walletAddress');
-    if (savedAddress) {
-      setAddress(savedAddress);
-      setIsWalletConnected(true);
+    // Client-side'da olduğumuzdan emin olalım
+    if (typeof window !== 'undefined') {
+      console.log('HOME PAGE AUTH CHECK:', {
+        session: !!session,
+        status,
+        address,
+        savedAddress: localStorage.getItem('walletAddress'),
+        cookies: document.cookie
+      });
       
-      // Cookie'yi güncelle
-      document.cookie = `walletAddress=${savedAddress}; path=/; max-age=86400; SameSite=Lax`;
+      // Diğer auth kontrolleriniz...
     }
     
-    // Sadece session veya cüzdan yoksa yönlendir
-    if (!session || (!isConnected && !savedAddress)) {
-      console.log('Missing auth, redirecting to landing page');
-      hasRedirected.current = true;
-      router.replace('/');
-    }
   }, [mounted, session, status, isConnected, router]);
   
-  // DİĞER useEffect'lerdeki REDIRECT KODLARINI KALDIRIN
-  
+  // LocalStorage'den bahis verilerini yükle
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      // LocalStorage'den bahis verilerini yükle
       const storedBets = localStorage.getItem('userBets');
       console.log('Stored bet types:', storedBets ? JSON.parse(storedBets) : {});
+      setLocalStorageBets(storedBets ? JSON.parse(storedBets) : {});
       setIsMounted(true);
     }
   }, []);
