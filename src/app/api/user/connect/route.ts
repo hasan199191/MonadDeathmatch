@@ -1,11 +1,23 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase"; // Prisma yerine Supabase client'ı kullanın
+import { supabase } from "@/lib/supabase";
+
+// İstek tipi tanımı
+interface ConnectRequest {
+  walletAddress: string;
+  twitterId: string;
+}
 
 export async function POST(req: Request) {
   try {
-    const { walletAddress, twitterId } = await req.json();
+    // Tip ataması (type assertion) ile güvenli dönüşüm
+    const { walletAddress, twitterId } = await req.json() as ConnectRequest;
     
-    // Prisma yerine Supabase ile kullanıcıyı bağla
+    // Paremetre kontrolü
+    if (!walletAddress) {
+      return NextResponse.json({ error: 'Wallet address is required' }, { status: 400 });
+    }
+
+    // Supabase ile kullanıcı bağlantısı
     const { data, error } = await supabase
       .from('participants')
       .upsert({
@@ -21,9 +33,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Failed to connect accounts' }, { status: 500 });
     }
     
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, data });
   } catch (error) {
     console.error('API error:', error);
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Server error',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }
