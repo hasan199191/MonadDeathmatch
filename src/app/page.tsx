@@ -1,4 +1,3 @@
-// app/page.tsx
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
@@ -7,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { useAccount } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import Image from 'next/image';
-import { supabase } from '@/lib/supabase';
 
 export default function LandingPage() {
   const { data: session, status } = useSession();
@@ -29,37 +27,6 @@ export default function LandingPage() {
     }
   }, [isConnected, wagmiAddress]);
 
-  // Kullanıcı verilerini Supabase'e kaydet
-  useEffect(() => {
-    async function saveUserData() {
-      if (isConnected && wagmiAddress && session?.user) {
-        try {
-          const { error } = await supabase
-            .from('participants')
-            .upsert({
-              wallet_address: wagmiAddress,
-              twitter_username: session.user.name,
-              twitter_profile_image: session.user.image,
-              updated_at: new Date().toISOString(),
-              is_active: true,
-              joined_pool: false
-            });
-
-          if (error) {
-            console.error('Veri kaydederken hata:', error);
-            return;
-          }
-
-          console.log('Kullanıcı verileri kaydedildi');
-        } catch (error) {
-          console.error('Veri kaydederken hata:', error);
-        }
-      }
-    }
-
-    saveUserData();
-  }, [isConnected, wagmiAddress, session]);
-
   // Twitter bağlantısı
   const handleTwitterSignIn = async () => {
     try {
@@ -73,32 +40,15 @@ export default function LandingPage() {
     }
   };
 
-  // Yönlendirme kontrolü - bu kısmı güncelleyeceğiz
+  // Yönlendirme kontrolü
   useEffect(() => {
     if (!mounted || status === 'loading' || hasRedirected.current) return;
-    
-    async function checkAndRedirect() {
-      if (session && isConnected && wagmiAddress) {
-        try {
-          // Supabase'e veri kaydedildiğinden emin ol
-          await supabase.from('participants').upsert({
-            wallet_address: wagmiAddress,
-            twitter_username: session.user?.name,
-            twitter_profile_image: session.user?.image,
-            updated_at: new Date().toISOString()
-          });
 
-          hasRedirected.current = true;
-          router.replace('/home');
-        } catch (error) {
-          console.error('Error before redirect:', error);
-          setError('Data save failed');
-        }
-      }
+    if (session && isConnected) {
+      hasRedirected.current = true;
+      router.replace('/home');
     }
-
-    checkAndRedirect();
-  }, [mounted, session, isConnected, status, router, wagmiAddress]);
+  }, [mounted, session, isConnected, status, router]);
 
   // Durumlar
   const isTwitterConnected = !!session;
@@ -167,13 +117,6 @@ export default function LandingPage() {
           </div>
         </div>
       </div>
-
-      {/* Error Message */}
-      {error && (
-        <div className="fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg">
-          {error}
-        </div>
-      )}
 
       {/* Features Grid */}
       <div className="relative z-10 container mx-auto px-4 py-16">

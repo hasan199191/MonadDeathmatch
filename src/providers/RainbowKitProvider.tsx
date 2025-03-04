@@ -1,66 +1,34 @@
 // providers/RainbowKitProvider.tsx
 'use client';
 
-import { WagmiConfig, createConfig, configureChains } from 'wagmi';
+import { RainbowKitProvider, getDefaultWallets } from '@rainbow-me/rainbowkit';
+import { configureChains, createConfig, WagmiConfig } from 'wagmi';
+import { mainnet, polygon } from 'wagmi/chains';
 import { publicProvider } from 'wagmi/providers/public';
-import {
-  getDefaultWallets,
-  RainbowKitProvider as RKProvider,
-  darkTheme,
-} from '@rainbow-me/rainbowkit';
-import '@rainbow-me/rainbowkit/styles.css';
-
-// Monad zincir konfigürasyonu
-const monadChain = {
-  id: 10143,
-  name: 'Monad',
-  network: 'monad',
-  nativeCurrency: {
-    decimals: 18,
-    name: 'Monad',
-    symbol: 'MONAD',
-  },
-  rpcUrls: {
-    public: { http: ['https://rpc.monad.xyz/devnet'] },
-    default: { http: ['https://rpc.monad.xyz/devnet'] },
-  },
-};
 
 const { chains, publicClient } = configureChains(
-  [monadChain],
+  [mainnet, polygon],
   [publicProvider()]
 );
 
 const { connectors } = getDefaultWallets({
   appName: 'Monad Deathmatch',
-  projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID as string,
+  projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID!,
   chains,
 });
 
-const config = createConfig({
+const wagmiConfig = createConfig({
   autoConnect: true,
   connectors,
   publicClient,
 });
 
-interface RainbowKitProviderWrapperProps {
-  children: React.ReactNode;
-}
-
-export default function RainbowKitProviderWrapper({
-  children,
-}: RainbowKitProviderWrapperProps) {
+export default function RainbowKitProviderWrapper({ children }: { children: React.ReactNode }) {
   return (
-    <WagmiConfig config={config}>
-      <RKProvider
-        chains={chains}
-        theme={darkTheme({
-          accentColor: '#8B5CF6',
-          borderRadius: 'medium',
-        })}
-      >
+    <WagmiConfig config={wagmiConfig}>
+      <RainbowKitProvider chains={chains}>
         {children}
-      </RKProvider>
+      </RainbowKitProvider>
     </WagmiConfig>
   );
 }
