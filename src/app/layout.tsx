@@ -10,6 +10,7 @@ import { SessionProvider } from 'next-auth/react';
 import RainbowKitProviderWrapper from '../providers/RainbowKitProvider';
 import Navbar from '@/components/Navbar';
 import { usePathname } from 'next/navigation';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 const plusJakartaSans = Plus_Jakarta_Sans({ subsets: ['latin'] });
 
@@ -26,10 +27,12 @@ export default function RootLayout({ children }: RootLayoutProps) {
       <body className={`${plusJakartaSans.className} bg-[#0D0D0D] text-white`}>
         <SessionProvider>
           <RainbowKitProviderWrapper>
-            {showNavbar && <Navbar />}
-            <main className={showNavbar ? 'pt-16' : ''}>
-              {children}
-            </main>
+            <ErrorBoundary>
+              {showNavbar && <Navbar />}
+              <main className={showNavbar ? 'pt-16' : ''}>
+                {children}
+              </main>
+            </ErrorBoundary>
           </RainbowKitProviderWrapper>
         </SessionProvider>
       </body>
