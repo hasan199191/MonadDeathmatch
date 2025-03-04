@@ -11,15 +11,16 @@
     "postbuild": "next-sitemap"
   },
   "dependencies": {
-    "@rainbow-me/rainbowkit": "^2.2.4",
+    "@rainbow-me/rainbowkit": "^1.0.0",
     "@supabase/supabase-js": "latest",
-    "@tanstack/react-query": "^5.67.1",
-    "next": "latest",
-    "next-auth": "^4.24.11",
-    "react": "latest",
-    "react-dom": "latest",
-    "viem": "^2.23.6",
-    "wagmi": "^2.14.12"
+    "next": "^14.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "viem": "^1.0.0",
+    "wagmi": "^1.0.0",
+    "@tanstack/react-query": "^4.36.1",
+    "next-auth": "^4.24.5",
+    "@prisma/client": "^5.0.0"
   },
   "devDependencies": {
     "@types/node": "latest",
@@ -28,6 +29,7 @@
     "autoprefixer": "latest",
     "postcss": "latest",
     "tailwindcss": "latest",
-    "typescript": "latest"
+    "typescript": "latest",
+    "prisma": "^5.0.0"
   }
 }
