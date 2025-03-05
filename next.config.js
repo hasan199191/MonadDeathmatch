@@ -6,9 +6,10 @@ const nextConfig = {
   images: {
     domains: ['pbs.twimg.com', 'abs.twimg.com'],
   },
+  // experimental bölümünü güncelliyoruz
   experimental: {
-    appDir: true,
-    serverActions: true,
+    // appDir artık varsayılan olduğu için kaldırıldı
+    // serverActions artık varsayılan olduğu için kaldırıldı
   },
   webpack: (config) => {
     config.resolve.fallback = {
