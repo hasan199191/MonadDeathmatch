@@ -1,14 +1,40 @@
 import { createClient } from '@supabase/supabase-js';
 
-if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-  throw new Error('NEXT_PUBLIC_SUPABASE_URL çevre değişkeni eksik');
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error('Missing Supabase environment variables');
 }
 
-if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-  throw new Error('NEXT_PUBLIC_SUPABASE_ANON_KEY çevre değişkeni eksik');
-}
+export const supabase = createClient(supabaseUrl, supabaseKey);
 
-export const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
+// Bağlantı testi fonksiyonunu güncelleyelim
+export const testConnection = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('participants')
+      .select('*')
+      .limit(1);
+    
+    if (error) {
+      console.error('Supabase bağlantı hatası:', error);
+      return false;
+    }
+    
+    console.log('Supabase bağlantı başarılı:', data);
+    return true;
+  } catch (error) {
+    console.error('Supabase bağlantı testi sırasında hata:', error);
+    return false;
+  }
+};
+
+// Cache'i kontrol eden yardımcı fonksiyon
+export const clearSupabaseCache = () => {
+  supabase.removeAllSubscriptions();
+  // Local storage'dan Supabase ile ilgili verileri temizle
+  Object.keys(localStorage)
+    .filter(key => key.startsWith('sb-'))
+    .forEach(key => localStorage.removeItem(key));
+};

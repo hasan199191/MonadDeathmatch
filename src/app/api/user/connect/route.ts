@@ -9,36 +9,52 @@ interface ConnectRequest {
 
 export async function POST(req: Request) {
   try {
-    // Tip ataması (type assertion) ile güvenli dönüşüm
-    const { walletAddress, twitterId } = await req.json() as ConnectRequest;
+    const { walletAddress } = await req.json();
+    const token = await getToken({ req });
     
-    // Paremetre kontrolü
-    if (!walletAddress) {
-      return NextResponse.json({ error: 'Wallet address is required' }, { status: 400 });
+    if (!token) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    // Supabase ile kullanıcı bağlantısı
+    // Önce eski kaydı temizleyelim
+    const { error: deleteError } = await supabase
+      .from('participants')
+      .delete()
+      .eq('wallet_address', walletAddress.toLowerCase());
+
+    if (deleteError) {
+      console.error('Eski kayıt silme hatası:', deleteError);
+    }
+
+    // Yeni kaydı ekleyelim
     const { data, error } = await supabase
       .from('participants')
-      .upsert({
-        wallet_address: walletAddress,
-        twitter_id: twitterId,
-        updated_at: new Date().toISOString()
-      }, {
-        onConflict: 'wallet_address'
-      });
-    
+      .insert([
+        {
+          wallet_address: walletAddress.toLowerCase(),
+          twitter_id: token.sub,
+          twitter_username: token.username,
+          profile_image_url: token.picture,
+          last_connected: new Date().toISOString()
+        }
+      ])
+      .select();
+
     if (error) {
-      console.error('Supabase error:', error);
-      return NextResponse.json({ error: 'Failed to connect accounts' }, { status: 500 });
+      console.error('Supabase hatası:', error);
+      return NextResponse.json({ error: 'Database error' }, { status: 500 });
     }
-    
-    return NextResponse.json({ success: true, data });
+
+    // Debug için log
+    console.log('Yeni bağlantı kaydı:', {
+      wallet: walletAddress,
+      twitter: token,
+      result: data
+    });
+
+    return NextResponse.json(data[0]);
   } catch (error) {
-    console.error('API error:', error);
-    return NextResponse.json({ 
-      error: 'Server error',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    console.error('API hatası:', error);
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

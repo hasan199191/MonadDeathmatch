@@ -46,10 +46,9 @@ interface BetItemProps {
 
 // User interface'ini ekleyelim
 interface User {
-  id: string;
-  walletAddress: string;
-  twitterUsername?: string | null;
-  profileImageUrl?: string | null;
+  wallet_address: string;          // wallet_address olarak güncellendi
+  twitter_username: string | null;  // twitter_username olarak güncellendi
+  profile_image_url: string | null; // profile_image_url olarak güncellendi
 }
 
 // 1. localStorage kullanarak bahisleri takip etmek için bir utils fonksiyonu oluşturun
@@ -518,7 +517,7 @@ export default function HomePage() {
 
   // Twitter/X kullanıcı verilerini almak için useEffect ekleyin
   useEffect(() => {
-    const fetchTwitterData = async () => {
+    const fetchUserData = async () => {
       try {
         const response = await fetch('/api/user/get-users');
         const users: User[] = await response.json();
@@ -547,35 +546,37 @@ export default function HomePage() {
       }
     };
     
-    fetchTwitterData();
+    fetchUserData();
   }, [participants]);
 
-// 2. Onun yerine, API'den gelen gerçek verileri kullanan useEffect'i güncelleyelim:
+// participants listesi kısmında şu güncellemeleri yapalım
+const [enrichedParticipants, setEnrichedParticipants] = useState<any[]>([]);
+
 useEffect(() => {
   const fetchParticipantData = async () => {
     try {
-      const response = await fetch('/api/participant-stats');
-      const data = await response.json();
+      const response = await fetch('/api/users'); // Doğru endpoint
+      const users = await response.json();
       
-      if (data.success && participants) {
-        console.log('API response:', data);
+      console.log('Fetched users:', users); // Debug için
+
+      if (!participants) return;
+      
+      const enriched = participants.map(participant => {
+        const userMatch = users.find(
+          user => user.wallet_address?.toLowerCase() === participant.toLowerCase()
+        );
         
-        const enriched = participants.map(participant => {
-          const dbMatch = data.participants?.find(
-            (p: any) => p.address.toLowerCase() === participant.toLowerCase()
-          );
+        return {
+          address: participant,
+          twitterUsername: userMatch?.twitter_username || null,  // alan adı güncellendi
+          profileImage: userMatch?.profile_image_url || '/default-avatar.png', // alan adı güncellendi
+          isEliminated: false
+        };
+      });
 
-          return {
-            address: participant,
-            twitterUsername: dbMatch?.twitterUsername || null,
-            profileImage: dbMatch?.profileImage || null,
-            isEliminated: false
-          };
-        });
-
-        console.log('Enriched participants:', enriched);
-        setEnrichedParticipants(enriched);
-      }
+      console.log('Enriched participants:', enriched); // Debug için
+      setEnrichedParticipants(enriched);
     } catch (error) {
       console.error('Participant data fetch error:', error);
     }
