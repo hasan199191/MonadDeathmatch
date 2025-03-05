@@ -15,14 +15,16 @@
   "dependencies": {
     "@rainbow-me/rainbowkit": "1.0.0",
     "@supabase/supabase-js": "^2.49.1",
+    "@types/dotenv": "^8.2.3",
+    "date-fns": "^4.1.0",
+    "dotenv": "^16.4.7",
     "next": "14.0.4",
     "next-auth": "^4.24.5",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "viem": "1.0.0",
-    "wagmi": "1.2.0",
     "react-hot-toast": "^2.4.1",
-    "date-fns": "^4.1.0"
+    "viem": "1.0.0",
+    "wagmi": "1.2.0"
   },
   "devDependencies": {
     "@ethersproject/providers": "^5.8.0",

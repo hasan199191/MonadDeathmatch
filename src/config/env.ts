@@ -1,19 +1,30 @@
-import dotenv from 'dotenv';
+import { config } from 'dotenv';
+import { z } from 'zod';
 import path from 'path';
 
 // .env dosyasının konumunu belirt
 const envPath = path.resolve(process.cwd(), '.env');
 
 // .env dosyasını yükle
-dotenv.config({ path: envPath });
+config({ path: envPath });
 
-interface Env {
-  MONAD_RPC_URL: string;
-  MONAD_TESTNET_ID: number;
-}
+const envSchema = z.object({
+  // Next.js
+  NODE_ENV: z.enum(['development', 'production', 'test']),
+  
+  // Next Auth
+  NEXTAUTH_URL: z.string().url(),
+  NEXTAUTH_SECRET: z.string(),
+  
+  // Twitter OAuth
+  TWITTER_CLIENT_ID: z.string(),
+  TWITTER_CLIENT_SECRET: z.string(),
+  
+  // WalletConnect
+  NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: z.string(),
+  
+  // Contract
+  NEXT_PUBLIC_CONTRACT_ADDRESS: z.string(),
+});
 
-// Environment değişkenlerini export et
-export const ENV: Env = {
-  MONAD_RPC_URL: 'https://testnet-rpc.monad.xyz',
-  MONAD_TESTNET_ID: 1287
-};
+export const env = envSchema.parse(process.env);
