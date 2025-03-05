@@ -127,35 +127,60 @@ const getBetTypeFromLocalStorage = (participant: string) => {
 };
 
 function HomePage() {
-  const { data: session, status } = useSession({
-    required: false
-  });
-
-  const router = useRouter();
-  const [mounted, setMounted] = useState(false);
-  const { address: wagmiAddress, isConnected } = useAccount(); // Wagmi hookunu ekleyin
+  const router = useRouter(); // useRouter hook'unu ekleyelim
+  const { data: session, status } = useSession();
+  const { address: wagmiAddress, isConnected } = useAccount();
   const [address, setAddress] = useState<string>('');
   const [betAmount, setBetAmount] = useState('');
-  const [betType, setBetType] = useState<string>("top10"); // String olarak saklayın
+  const [betType, setBetType] = useState<string>("top10");
   const [targetParticipant, setTargetParticipant] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);
-  const [maxParticipants, setMaxParticipants] = useState<number | null>(null)
+  const [maxParticipants, setMaxParticipants] = useState<number | null>(null);
   const [isWalletConnected, setIsWalletConnected] = useState(false);
   const hasRedirected = useRef(false);
   const hasAttemptedRedirect = useRef(false);
   const [isClient, setIsClient] = useState(false);
 
-  // TEK BİR AUTH KONTROLÜ
   useEffect(() => {
-    if (!mounted) {
-      setMounted(true);
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isMounted) {
+      setIsMounted(true);
       return;
     }
-    
+
+    if (status === 'loading') return;
+  }, [isMounted, session, status, isConnected]);
+
+  if (!isClient) {
+    return null; // veya loading komponenti
+  }
+
+  useEffect(() => {
+    if (!isMounted) {
+      setIsMounted(true);
+      return;
+    }
+  
+    if (status === 'loading') return;
+  }, [isMounted, session, status, isConnected]);
+  
+  if (!isClient) {
+    return null; // veya loading komponenti
+  }
+  
+  useEffect(() => {
+    if (!isMounted) {
+      setIsMounted(true);
+      return;
+    }
+
     // Session yüklenene kadar bekle
     if (status === 'loading') return;
     if (hasRedirected.current) return;
-    
+
     console.log('HOME PAGE AUTH CHECK:', {
       session: !!session,
       status,
@@ -163,23 +188,23 @@ function HomePage() {
       savedAddress: localStorage.getItem('walletAddress'),
       cookies: document.cookie
     });
-    
+
     const savedAddress = localStorage.getItem('walletAddress');
     if (savedAddress) {
       setAddress(savedAddress);
       setIsWalletConnected(true);
-      
+
       // Cookie'yi güncelle
       document.cookie = `walletAddress=${savedAddress}; path=/; max-age=86400; SameSite=Lax`;
     }
-    
+
     // Sadece session veya cüzdan yoksa yönlendir
     if (!session || (!isConnected && !savedAddress)) {
       console.log('Missing auth, redirecting to landing page');
       hasRedirected.current = true;
       router.replace('/');
     }
-  }, [mounted, session, status, isConnected, router]);
+  }, [isMounted, session, status, isConnected, router, address]);
   
   // DİĞER useEffect'lerdeki REDIRECT KODLARINI KALDIRIN
   
@@ -598,10 +623,10 @@ function HomePage() {
 
   // Eğer cüzdan bağlı değilse ana sayfaya yönlendir
   useEffect(() => {
-    if (!isConnected && mounted) {
+    if (!isConnected && isMounted) {
       router.replace('/');
     }
-  }, [isConnected, mounted, router]);
+  }, [isConnected, isMounted, router]);
 
   // Auth kontrolü
   useEffect(() => {
@@ -633,18 +658,10 @@ function HomePage() {
     return null;
   }
 
-  if (!mounted || !isConnected) return null;
+  if (!isMounted || !isConnected) return null;
 
   if (!isMounted) {
     return null;
-  }
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  if (!isClient) {
-    return null; // veya loading komponenti
   }
 
   return (
