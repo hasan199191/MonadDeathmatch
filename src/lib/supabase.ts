@@ -4,7 +4,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 if (!supabaseUrl || !supabaseKey) {
-  throw new Error('Missing Supabase environment variables');
+  throw new Error('Supabase environment variables eksik');
 }
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
@@ -32,9 +32,10 @@ export const testConnection = async () => {
 
 // Cache'i kontrol eden yardımcı fonksiyon
 export const clearSupabaseCache = () => {
-  supabase.removeAllSubscriptions();
   // Local storage'dan Supabase ile ilgili verileri temizle
-  Object.keys(localStorage)
-    .filter(key => key.startsWith('sb-'))
-    .forEach(key => localStorage.removeItem(key));
+  if (typeof window !== 'undefined') {
+    Object.keys(localStorage)
+      .filter(key => key.startsWith('sb-'))
+      .forEach(key => localStorage.removeItem(key));
+  }
 };

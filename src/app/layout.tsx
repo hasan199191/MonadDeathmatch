@@ -1,35 +1,25 @@
 // app/layout.tsx
-'use client';
 
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 import { ReactNode } from 'react';
-import { SessionProvider } from 'next-auth/react';
-import RainbowKitProviderWrapper from '@/providers/RainbowKitProvider';
-import Navbar from '@/components/Navbar';
-import { usePathname } from 'next/navigation';
+import Providers from '@/components/Providers';
+import type { Metadata } from 'next';
 
 const plusJakartaSans = Plus_Jakarta_Sans({ subsets: ['latin'] });
 
-interface RootLayoutProps {
-  children: ReactNode;
-}
+export const metadata: Metadata = {
+  title: 'Monad Deathmatch',
+  description: 'Survival of the fittest in the Monad chain',
+};
 
-export default function RootLayout({ children }: RootLayoutProps) {
-  const pathname = usePathname();
-  const showNavbar = pathname !== '/'; // Hide navbar on landing page
-
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
-      <body className={`${plusJakartaSans.className} bg-[#0D0D0D] text-white`}>
-        <SessionProvider>
-          <RainbowKitProviderWrapper>
-            {showNavbar && <Navbar />}
-            <main className={showNavbar ? 'pt-16' : ''}>
-              {children}
-            </main>
-          </RainbowKitProviderWrapper>
-        </SessionProvider>
+    <html lang="tr">
+      <body className={plusJakartaSans.className}>
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );

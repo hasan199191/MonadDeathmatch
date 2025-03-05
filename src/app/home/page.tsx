@@ -28,6 +28,7 @@ import EliminatedPlayers from '@/components/EliminatedPlayers';
 import EliminationTimer from '@/components/EliminationTimer';
 import { createPublicClient, http } from 'viem'
 import { monad } from '@/config/chains'
+import { Session, DefaultSession } from "next-auth";
 
 // Tip tanımlamalarını dosyanın başına taşıyalım
 interface Bet {
@@ -44,12 +45,55 @@ interface BetItemProps {
   index: number
 }
 
-// User interface'ini ekleyelim
+// User interface'ini güncelle
 interface User {
-  wallet_address: string;          // wallet_address olarak güncellendi
-  twitter_username: string | null;  // twitter_username olarak güncellendi
-  profile_image_url: string | null; // profile_image_url olarak güncellendi
+  wallet_address: string;
+  twitter_username: string | null;
+  twitter_profile_image: string | null;  // URL olarak gelecek
+  twitter_id: string | null;
 }
+
+// EnrichedParticipant interface'ini güncelle
+interface EnrichedParticipant {
+  address: string;
+  twitterUsername: string | null;
+  profileImage: string;  // Varsayılan değer için string olarak tanımladık
+  isEliminated?: boolean; // optional olarak ekle
+}
+
+// TwitterUser ve CustomSession interface'lerini güncelle
+interface TwitterUser {
+  id: string;
+  name: string | null;
+  email: string | null;
+  image: string | null;
+  twitterUsername?: string;
+  twitterId?: string;
+}
+
+// Next.js Auth tip tanımlamaları
+
+
+// Base user type tanımlama
+interface TwitterUserProfile {
+  twitterUsername?: string;
+  twitterImage?: string;
+  twitterId?: string;
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+}
+
+// CustomSession interface'ini güncelle
+interface CustomSession extends Omit<Session, "user"> {
+  user?: TwitterUserProfile;
+}
+
+// useSession hook'unu güncelle
+const { data: session, status } = useSession() as {
+  data: CustomSession | null;
+  status: "loading" | "authenticated" | "unauthenticated";
+};
 
 // 1. localStorage kullanarak bahisleri takip etmek için bir utils fonksiyonu oluşturun
 // Bu fonksiyon src/utils/bets.ts olarak kaydedilebilir
@@ -82,8 +126,11 @@ const getBetTypeFromLocalStorage = (participant: string) => {
   }
 };
 
-export default function HomePage() {
-  const { data: session, status } = useSession();
+function HomePage() {
+  const { data: session, status } = useSession({
+    required: false
+  });
+
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const { address: wagmiAddress, isConnected } = useAccount(); // Wagmi hookunu ekleyin
@@ -96,6 +143,7 @@ export default function HomePage() {
   const [isWalletConnected, setIsWalletConnected] = useState(false);
   const hasRedirected = useRef(false);
   const hasAttemptedRedirect = useRef(false);
+  const [isClient, setIsClient] = useState(false);
 
   // TEK BİR AUTH KONTROLÜ
   useEffect(() => {
@@ -156,7 +204,7 @@ export default function HomePage() {
             },
             body: JSON.stringify({
               address: address,
-              twitterId: session.user.id
+              twitterId: session.user.twitterId // id yerine twitterId kullan
             })
           });
         } catch (error) {
@@ -488,7 +536,7 @@ export default function HomePage() {
               <span className="text-red-500 ml-1 flex items-center">
                 Inactive
                 <svg className="w-3 h-3 ml-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 001.414 1.414L10 11.414l1.293 1.293a1 1 001.414-1.414L11.414 10l1.293-1.293a1 1 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"></path>
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 001.414 1.414L10 11.414l1.293 1.293a1 1 001.414-1.414L11.414 10l1.293-1.293a1 1 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"></path>
                 </svg>
               </span>
             )}
@@ -513,79 +561,40 @@ export default function HomePage() {
   };
 
   // Mevcut katılımcı listesi bölümünü güncelleyin
-  const [enrichedParticipants, setEnrichedParticipants] = useState<any[]>([]);
+  const [enrichedParticipants, setEnrichedParticipants] = useState<EnrichedParticipant[]>([]);
 
   // Twitter/X kullanıcı verilerini almak için useEffect ekleyin
   useEffect(() => {
-    const fetchUserData = async () => {
+    const fetchParticipantData = async () => {
       try {
-        const response = await fetch('/api/user/get-users');
+        const response = await fetch('/api/users');
         const users: User[] = await response.json();
         
-        // participants'in tanımlı olup olmadığını kontrol et
-        if (!participants) {
-          console.log("Katılımcı listesi henüz yüklenmedi.");
-          return;
-        }
+        if (!participants) return;
         
         const enriched = participants.map(participant => {
           const userMatch = users.find(
-            (user: User) => user.walletAddress.toLowerCase() === participant.toLowerCase()
+            user => user.wallet_address?.toLowerCase() === participant.toLowerCase()
           );
           
           return {
             address: participant,
-            twitterUsername: userMatch?.twitterUsername || null,
-            profileImageUrl: userMatch?.profileImageUrl || null
+            twitterUsername: userMatch?.twitter_username || 'Anonim',
+            profileImage: userMatch?.twitter_profile_image || '/default-avatar.png'  // Varsayılan avatar
           };
         });
-        
+
+        console.log('Zenginleştirilmiş katılımcılar:', enriched);
         setEnrichedParticipants(enriched);
       } catch (error) {
-        console.error("Kullanıcı verilerini getirirken hata:", error);
+        console.error('Katılımcı verilerini getirirken hata:', error);
       }
     };
-    
-    fetchUserData();
-  }, [participants]);
 
-// participants listesi kısmında şu güncellemeleri yapalım
-const [enrichedParticipants, setEnrichedParticipants] = useState<any[]>([]);
-
-useEffect(() => {
-  const fetchParticipantData = async () => {
-    try {
-      const response = await fetch('/api/users'); // Doğru endpoint
-      const users = await response.json();
-      
-      console.log('Fetched users:', users); // Debug için
-
-      if (!participants) return;
-      
-      const enriched = participants.map(participant => {
-        const userMatch = users.find(
-          user => user.wallet_address?.toLowerCase() === participant.toLowerCase()
-        );
-        
-        return {
-          address: participant,
-          twitterUsername: userMatch?.twitter_username || null,  // alan adı güncellendi
-          profileImage: userMatch?.profile_image_url || '/default-avatar.png', // alan adı güncellendi
-          isEliminated: false
-        };
-      });
-
-      console.log('Enriched participants:', enriched); // Debug için
-      setEnrichedParticipants(enriched);
-    } catch (error) {
-      console.error('Participant data fetch error:', error);
+    if (participants && participants.length > 0) {
+      fetchParticipantData();
     }
-  };
-
-  if (participants && participants.length > 0) {
-    fetchParticipantData();
-  }
-}, [participants]);
+  }, [participants]);
 
   // Eğer cüzdan bağlı değilse ana sayfaya yönlendir
   useEffect(() => {
@@ -628,6 +637,14 @@ useEffect(() => {
 
   if (!isMounted) {
     return null;
+  }
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  if (!isClient) {
+    return null; // veya loading komponenti
   }
 
   return (
@@ -750,11 +767,11 @@ useEffect(() => {
                             <div className="relative w-12 h-12">
                               <Image
                                 src={enrichedParticipant?.profileImage || '/default-avatar.png'}
-                                alt="Profile"
+                                alt={`${enrichedParticipant?.twitterUsername || 'Anonim'} profil resmi`}
                                 width={48}
                                 height={48}
                                 className="rounded-full"
-                                unoptimized
+                                unoptimized  // Twitter URL'lerini optimize etmemek için
                               />
                             </div>
                             
@@ -934,36 +951,27 @@ interface ParticipantProps {
 
 // Katılımcıları görüntüleme bileşeni - tip eklenmiş hali
 function Participants({ participants }: ParticipantProps) {
-  // Zenginleştirilmiş katılımcı tipi
-  interface EnrichedParticipant {
-    walletAddress: string;
-    twitterUsername: string | null;
-    profileImageUrl: string | null;
-  }
-
   const [enrichedParticipants, setEnrichedParticipants] = useState<EnrichedParticipant[]>([]);
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const response = await fetch('/api/user/get-users');
-        const users: User[] = await response.json(); // Tip ekledik
-        console.log("Tüm kullanıcılar:", users);
+        const response = await fetch('/api/users');
+        const users: User[] = await response.json();
         
-        // Cüzdan adresleri için profil bilgilerini eşleştirin
         const enriched = participants.map(address => {
           const userMatch = users.find(
-            (user: User) => user.walletAddress.toLowerCase() === address.toLowerCase() // Tip ekledik
+            (user: User) => user.wallet_address.toLowerCase() === address.toLowerCase()
           );
           
           return {
-            walletAddress: address,
-            twitterUsername: userMatch?.twitterUsername || null,
-            profileImageUrl: userMatch?.profileImageUrl || null
+            address: address,
+            twitterUsername: userMatch?.twitter_username || null,
+            profileImage: userMatch?.twitter_profile_image || '/default-avatar.png',
+            isEliminated: false // varsayılan değer
           };
         });
         
-        console.log("Zenginleştirilmiş katılımcılar:", enriched);
         setEnrichedParticipants(enriched);
       } catch (error) {
         console.error("Kullanıcı verilerini getirirken hata:", error);
@@ -975,33 +983,7 @@ function Participants({ participants }: ParticipantProps) {
     }
   }, [participants]);
 
-  return (
-    <div className="mt-4">
-      <h2 className="text-xl font-bold mb-2">Participants ({participants.length})</h2>
-      <ul className="space-y-2">
-        {enrichedParticipants.map((participant, i) => (
-          <li key={i} className="flex items-center p-2 bg-gray-800 rounded-lg">
-            {participant.profileImageUrl ? (
-              <img 
-                src={participant.profileImageUrl} 
-                alt="Profile" 
-                className="w-10 h-10 rounded-full mr-3" 
-              />
-            ) : (
-              <div className="w-10 h-10 bg-gray-600 rounded-full mr-3" />
-            )}
-            
-            <div>
-              {participant.twitterUsername && (
-                <p className="text-blue-400">@{participant.twitterUsername}</p>
-              )}
-              <p className="text-gray-300">
-                {participant.walletAddress.slice(0, 6)}...{participant.walletAddress.slice(-4)}
-              </p>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
+  // ... rest of the component
 }
+
+export default HomePage;

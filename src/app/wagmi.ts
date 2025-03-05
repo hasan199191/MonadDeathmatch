@@ -33,7 +33,11 @@ contracts: {
 
 const { chains, publicClient } = configureChains(
   [monadChain],
-  [publicProvider()]
+  [publicProvider()],
+  {
+    // Polling interval'ı artırarak RPC isteklerini optimize ediyoruz
+    pollingInterval: 12_000, // 12 saniye
+  }
 );
 
 const { connectors } = getDefaultWallets({

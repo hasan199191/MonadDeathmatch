@@ -1,60 +1,73 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
 import { supabase } from "@/lib/supabase";
 
-// İstek tipi tanımı
-interface ConnectRequest {
-  walletAddress: string;
-  twitterId: string;
+interface TwitterUser {
+  sub: string;      // Twitter ID
+  name: string;     // Twitter kullanıcı adı
+  picture: string;  // Profil resmi URL'i
 }
 
-export async function POST(req: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const { walletAddress } = await req.json();
-    const token = await getToken({ req });
+    const { walletAddress } = await request.json();
+    
+    const token = await getToken({
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET
+    }) as TwitterUser | null;
     
     if (!token) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+      return NextResponse.json({ error: 'Twitter kimlik doğrulama başarısız' }, { status: 401 });
     }
 
-    // Önce eski kaydı temizleyelim
-    const { error: deleteError } = await supabase
+    // Önce eski kaydı kontrol et ve güncelle
+    const { data: existingUser, error: fetchError } = await supabase
       .from('participants')
-      .delete()
-      .eq('wallet_address', walletAddress.toLowerCase());
+      .select('*')
+      .eq('wallet_address', walletAddress.toLowerCase())
+      .single();
 
-    if (deleteError) {
-      console.error('Eski kayıt silme hatası:', deleteError);
-    }
+    if (existingUser) {
+      // Kullanıcı varsa güncelle
+      const { error: updateError } = await supabase
+        .from('participants')
+        .update({
+          twitter_id: token.sub,
+          twitter_username: token.name,
+          twitter_profile_image: token.picture,
+          updated_at: new Date().toISOString()
+        })
+        .eq('wallet_address', walletAddress.toLowerCase());
 
-    // Yeni kaydı ekleyelim
-    const { data, error } = await supabase
-      .from('participants')
-      .insert([
-        {
+      if (updateError) {
+        console.error('Güncelleme hatası:', updateError);
+        return NextResponse.json({ error: 'Güncelleme başarısız' }, { status: 500 });
+      }
+    } else {
+      // Yeni kullanıcı ekle
+      const { error: insertError } = await supabase
+        .from('participants')
+        .insert([{
           wallet_address: walletAddress.toLowerCase(),
           twitter_id: token.sub,
-          twitter_username: token.username,
-          profile_image_url: token.picture,
-          last_connected: new Date().toISOString()
-        }
-      ])
-      .select();
+          twitter_username: token.name,
+          twitter_profile_image: token.picture
+        }]);
 
-    if (error) {
-      console.error('Supabase hatası:', error);
-      return NextResponse.json({ error: 'Database error' }, { status: 500 });
+      if (insertError) {
+        console.error('Ekleme hatası:', insertError);
+        return NextResponse.json({ error: 'Kayıt başarısız' }, { status: 500 });
+      }
     }
 
-    // Debug için log
-    console.log('Yeni bağlantı kaydı:', {
-      wallet: walletAddress,
-      twitter: token,
-      result: data
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Twitter hesabı başarıyla bağlandı' 
     });
 
-    return NextResponse.json(data[0]);
   } catch (error) {
     console.error('API hatası:', error);
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+    return NextResponse.json({ error: 'Sunucu hatası' }, { status: 500 });
   }
 }
