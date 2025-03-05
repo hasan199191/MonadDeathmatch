@@ -6,11 +6,6 @@ const nextConfig = {
   images: {
     domains: ['pbs.twimg.com', 'abs.twimg.com'],
   },
-  // experimental bölümünü güncelliyoruz
-  experimental: {
-    // appDir artık varsayılan olduğu için kaldırıldı
-    // serverActions artık varsayılan olduğu için kaldırıldı
-  },
   webpack: (config) => {
     config.resolve.fallback = {
       ...config.resolve.fallback,
@@ -19,6 +14,14 @@ const nextConfig = {
       tls: false,
     };
     return config;
+  },
+  env: {
+    NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID,
+    NEXT_PUBLIC_CONTRACT_ADDRESS: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS,
+    NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+    NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
+    TWITTER_CLIENT_ID: process.env.TWITTER_CLIENT_ID,
+    TWITTER_CLIENT_SECRET: process.env.TWITTER_CLIENT_SECRET,
   }
 };
 
