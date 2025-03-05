@@ -5,6 +5,7 @@ import './globals.css';
 import { ReactNode } from 'react';
 import Providers from '@/components/Providers';
 import type { Metadata } from 'next';
+import { Toaster } from 'react-hot-toast';
 
 const plusJakartaSans = Plus_Jakarta_Sans({ subsets: ['latin'] });
 
@@ -19,6 +20,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className={plusJakartaSans.className}>
         <Providers>
           {children}
+          <Toaster />
         </Providers>
       </body>
     </html>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
+import { tr } from 'date-fns/locale';
 
 interface EliminatedPlayer {
   address: string;
@@ -9,8 +10,12 @@ interface EliminatedPlayer {
   eliminationDate: Date;
 }
 
-const EliminatedPlayers = () => {
+export default function EliminatedPlayers() {
   const [eliminated, setEliminated] = useState<EliminatedPlayer[]>([]);
+
+  const formatDate = (date: string) => {
+    return format(new Date(date), 'dd MMMM yyyy HH:mm', { locale: tr });
+  };
 
   return (
     <div className="bg-[#1A1A1A] rounded-xl p-6">
@@ -44,6 +49,4 @@ const EliminatedPlayers = () => {
       </div>
     </div>
   );
-};
-
-export default EliminatedPlayers;
+}
