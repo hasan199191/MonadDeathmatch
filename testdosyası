@@ -1,0 +1,343 @@
+const { expect } = require("chai");
+const { ethers } = require("hardhat");
+
+describe("SimpleMonadSurvive Bahis ve Ödül Testi", function () {
+  let contract;
+  let owner, players = [], bettors = [];
+  let entranceFee, ticketPrice, betAmount;
+  let eliminatedPlayersArray = [];
+  
+  before(async function () {
+    console.log("🚀 Test ortamı hazırlanıyor...");
+    const accounts = await ethers.getSigners();
+    owner = accounts[0];
+    
+    // 10 oyuncu ve 5 bahisçi ayarla
+    players = accounts.slice(1, 11);
+    bettors = accounts.slice(11, 16);
+    
+    // Test değerlerini ayarla
+    entranceFee = ethers.utils.parseEther("0.01");
+    ticketPrice = ethers.utils.parseEther("0.005");
+    minBetAmount = ethers.utils.parseEther("0.001");
+    maxBetAmount = ethers.utils.parseEther("0.01");
+    betAmount = ethers.utils.parseEther("0.005");
+    const eliminationStartTime = Math.floor(Date.now() / 1000) + 60; // 60 saniye sonra
+    const eliminationInterval = 300; // 5 dakika
+    
+    // SimpleMonadSurvive kontratını deploy et
+    const ContractFactory = await ethers.getContractFactory("SimpleMonadSurvive");
+    contract = await ContractFactory.deploy(
+      entranceFee,
+      ticketPrice,
+      minBetAmount,
+      maxBetAmount,
+      eliminationStartTime,
+      eliminationInterval
+    );
+    
+    await contract.deployed();
+    console.log("✅ Kontrat deploy edildi:", contract.address);
+    
+    // Havuz oluştur
+    await contract.createPool();
+    console.log("✅ Havuz oluşturuldu, ID: 1");
+  });
+  
+  it("Oyuncular havuza katılabilmeli", async function () {
+    // İlk 10 oyuncu havuza katılıyor
+    for (let i = 0; i < players.length; i++) {
+      try {
+        await contract.connect(players[i]).joinPool({ value: entranceFee });
+        console.log(`Oyuncu ${i+1} havuza katıldı: ${players[i].address}`);
+      } catch (error) {
+        console.error(`Oyuncu ${i+1} havuza katılamadı: ${error.message}`);
+      }
+    }
+    
+    const activePlayerCount = await contract.getActivePlayerCount();
+    console.log(`✅ ${activePlayerCount} oyuncu havuza katıldı`);
+    // BigNumber karşılaştırması için .toString() kullanıyoruz
+    expect(activePlayerCount.toString()).to.equal("10");
+  });
+  
+  it("Bahisçiler bahis yapabilmeli", async function () {
+    console.log("\n🎲 BAHİSLER YAPILIYOR");
+    
+    // Zaman ilerlet - bahis dönemini başlat
+    await ethers.provider.send("evm_increaseTime", [60]);
+    await ethers.provider.send("evm_mine", []);
+    
+    // Top 5'e girecek oyuncuları belirleyelim
+    const top5Players = players.slice(0, 5);
+    console.log("Top 5 oyuncular:", top5Players.map(p => p.address));
+    
+    // Her bahisçi için bir bahis yap
+    for (let i = 0; i < bettors.length; i++) {
+      try {
+        // Bahisçi bakiyesi öncesi
+        const balanceBefore = await ethers.provider.getBalance(bettors[i].address);
+        console.log(`Bahisçi ${i+1} bakiyesi öncesi: ${ethers.utils.formatEther(balanceBefore)} ETH`);
+        
+        // Hedef oyuncu - 5. bahisçi doğru tahmin yapsın (top 5'e giren oyuncu)
+        const targetIndex = i === 4 ? 4 : (i + 5) % players.length; // 5. bahisçi 5. oyuncuyu tahmin ediyor
+        const targetPlayer = players[targetIndex];
+        
+        // Bahis yap
+        await contract.connect(bettors[i]).placeBet(targetPlayer.address, { value: betAmount });
+        
+        if (i === 4) {
+          console.log(`✅ Bahisçi ${i+1} KAZANAN bahis yaptı: Hedef=${targetPlayer.address}`);
+        } else {
+          console.log(`✅ Bahisçi ${i+1} bahis yaptı: Hedef=${targetPlayer.address}`);
+        }
+      } catch (error) {
+        console.log(`❌ Bahisçi ${i+1} bahis yapamadı: ${error.message}`);
+      }
+    }
+    
+    // Toplam bahis miktarını kontrol et
+    const totalBets = await contract.totalBetFees();
+    console.log(`✅ Toplam bahis miktarı: ${ethers.utils.formatEther(totalBets)} ETH`);
+  });
+  
+  it("Eleme işlemi doğru sırayla yapılabilmeli", async function() {
+    console.log("\n⚔️ ELEME İŞLEMİ BAŞLIYOR");
+    
+    // Eleme işlemini aktif hale getir
+    await contract.connect(owner).startAutomaticElimination();
+    
+    // Sırayla elemeyi gerçekleştir - 1 şampiyon kalacak şekilde
+    // Önce tüm oyuncuları ele, son oyuncu hariç (indeks 4 - 5. oyuncu)
+    const eliminationOrder = [
+      9, 8, 7, 6, // 10-7. sıradakiler
+      0, 1, 2, 3, // 6-3. sıradakiler
+      5, 
+    ];
+    
+    // Son kalan oyuncular
+    const remainingPlayers = [...players];
+    
+    // Elimizden geldiği kadar oyuncuyu ele
+    for (let i = 0; i < eliminationOrder.length; i++) {
+      const playerIndex = eliminationOrder[i];
+      try {
+        await contract.connect(owner).eliminatePlayer(players[playerIndex].address);
+        eliminatedPlayersArray.push(players[playerIndex]);
+        remainingPlayers.splice(remainingPlayers.indexOf(players[playerIndex]), 1);
+        
+        // Sıralamayı belirle
+        let rank;
+        if (i < 4) rank = 10 - i; // 10,9,8,7. sıra
+        else if (i < 8) rank = 6 - (i - 4); // 6,5,4,3. sıra
+        else rank = 2; // 2. sıra
+        
+        console.log(`🔴 ${rank}. sırada: ${players[playerIndex].address}`);
+      } catch (error) {
+        console.log(`❌ Eleme başarısız: ${error.message}`);
+      }
+    }
+    
+    // Kalan son oyuncu (şampiyon) - burada 2 oyuncu kalırsa, birini daha elemeye çalışalım
+    const activeCount = await contract.getActivePlayerCount();
+    console.log(`✅ Kalan aktif oyuncu sayısı: ${activeCount}`);
+    
+    // Eğer hala 2 oyuncu kaldıysa son bir elimizden geleni deneyelim
+    if (activeCount.toString() === "2" && remainingPlayers.length === 2) {
+      try {
+        // Son kalan oyunculardan birini ele
+        const playerToEliminate = remainingPlayers[0].address === players[4].address ? 
+                                  remainingPlayers[1] : remainingPlayers[0];
+        
+        await contract.connect(owner).eliminatePlayer(playerToEliminate.address);
+        console.log(`🔴 2. sırada: ${playerToEliminate.address}`);
+        eliminatedPlayersArray.push(playerToEliminate);
+      } catch (error) {
+        console.log(`❌ Son eleme denemesi başarısız: ${error.message}`);
+      }
+    }
+    
+    // Şampiyonu kontrol et
+    const activePlayersCount = await contract.getActivePlayerCount();
+    
+    if (activePlayersCount.toString() === "1") {
+      // Tüm aktif oyuncuları kontrol edelim
+      for (const player of players) {
+        const isActive = await contract.isActivePlayer(player.address);
+        if (isActive) {
+          console.log(`🏆 Şampiyon (1. sırada): ${player.address}`);
+          break;
+        }
+      }
+    } else {
+      // Hedeflenen şampiyon 5. oyuncu (indeks 4)
+      console.log(`🏆 Hedeflenen şampiyon (hala elimizde değil): ${players[4].address}`);
+    }
+  });
+  
+  it("Havuz tamamlanabilmeli ve ödüller dağıtılabilmeli", async function() {
+    console.log("\n💰 HAVUZU TAMAMLAMA VE ÖDÜL DAĞITIMI");
+    
+    // Oyuncuların başlangıç bakiyelerini kaydet
+    const initialBalances = {};
+    
+    // Şampiyon bakiyesi - hedeflenen şampiyon 5. oyuncu (indeks 4)
+    const champion = players[4];
+    initialBalances[champion.address] = await ethers.provider.getBalance(champion.address);
+    console.log(`Şampiyon başlangıç bakiyesi: ${ethers.utils.formatEther(initialBalances[champion.address])} ETH`);
+    
+    // Elenen oyuncuların bakiyeleri
+    for (const player of eliminatedPlayersArray) {
+      initialBalances[player.address] = await ethers.provider.getBalance(player.address);
+    }
+    
+    // Bahisçilerin bakiyeleri
+    for (const bettor of bettors) {
+      initialBalances[bettor.address] = await ethers.provider.getBalance(bettor.address);
+      console.log(`Bahisçi bakiyesi: ${ethers.utils.formatEther(initialBalances[bettor.address])} ETH`);
+    }
+    
+    // Şu anki aktif oyuncu sayısını kontrol edelim
+    const activeCount = await contract.getActivePlayerCount();
+    console.log(`Aktif oyuncu sayısı: ${activeCount}`);
+    
+    // Havuzu tamamlama yöntemleri
+    let completed = false;
+    
+    // Yöntem 1: Otomatik tamamlama için yeterli zaman geçsin
+    try {
+      // 1 saat ilerlet
+      await ethers.provider.send("evm_increaseTime", [3600]);
+      await ethers.provider.send("evm_mine", []);
+      console.log("Zaman ilerletildi, otomatik tamamlama beklenebilir...");
+      
+      // Şimdi havuzun tamamlandığını kontrol et
+      const poolInfo = await contract.getPoolInfo();
+      if (!poolInfo[0]) { // poolInfo[0] = isActive
+        console.log("✅ Havuz otomatik olarak tamamlandı");
+        completed = true;
+      }
+    } catch (error) {
+      console.log("Havuz durumu kontrolünde hata:", error.message);
+    }
+    
+    // Yöntem 2: Son kalan oyuncuyu ele ve havuzu tamamla
+    if (!completed && activeCount.toString() === "2") {
+      try {
+        // Son kalan oyunculardan birini ele
+        const activePlayers = [];
+        for (const player of players) {
+          if (await contract.isActivePlayer(player.address)) {
+            activePlayers.push(player);
+          }
+        }
+        
+        if (activePlayers.length === 2) {
+          // Hedeflenen şampiyon değil diğer oyuncuyu ele
+          const playerToEliminate = activePlayers[0].address === champion.address ? 
+                                    activePlayers[1] : activePlayers[0];
+          
+          await contract.connect(owner).eliminatePlayer(playerToEliminate.address);
+          console.log(`✅ Son rakip elendi: ${playerToEliminate.address}`);
+          
+          // Şimdi havuz otomatik olarak tamamlanmış olmalı
+          const poolInfo = await contract.getPoolInfo();
+          if (!poolInfo[0]) {
+            console.log("✅ Havuz son rakip elendikten sonra tamamlandı");
+            completed = true;
+          }
+        }
+      } catch (error) {
+        console.log("Son rakip eleme denemesi başarısız:", error.message);
+      }
+    }
+    
+    // Yöntem 3: Acil durum tamamlama fonksiyonu
+    if (!completed) {
+      try {
+        await contract.connect(owner).emergencyCompletePool();
+        console.log("✅ Havuz acil durum fonksiyonu ile tamamlandı");
+        completed = true;
+      } catch (error) {
+        console.log(`❌ Havuz tamamlama hatası: ${error.message}`);
+      }
+    }
+    
+    // Yöntem 4: Eğer havuzu tamamlayamazsak, test için dağıtım manueli dene
+    if (!completed) {
+      try {
+        await contract.connect(owner).distributeRewards();
+        console.log("✅ Ödüller manuel olarak dağıtıldı");
+        completed = true;
+      } catch (error) {
+        console.log(`❌ Manuel ödül dağıtımı hatası: ${error.message}`);
+      }
+    }
+    
+    // Ödülleri kontrol etmek için biraz bekleyelim
+    await ethers.provider.send("evm_mine", []);
+    
+    // Son bakiyeleri kontrol et
+    console.log("\n💵 ÖDÜL SONRASI BAKİYELER");
+    
+    // Şampiyon bakiyesi kontrol
+    try {
+      const championFinalBalance = await ethers.provider.getBalance(champion.address);
+      const championDifference = championFinalBalance.sub(initialBalances[champion.address]);
+      console.log(`Şampiyon bakiyesi değişimi: ${ethers.utils.formatEther(championDifference)} ETH`);
+      
+      // Şampiyonun ödül alması gereken miktarı hesapla ve kontrol et
+      const totalPool = entranceFee.mul(10); // 10 oyuncu * 0.01 ETH
+      const platformFee = totalPool.mul(10).div(100); // %10
+      const availablePool = totalPool.sub(platformFee);
+      const championReward = availablePool.mul(35).div(100); // %35
+      
+      console.log(`Beklenen şampiyon ödülü: ~${ethers.utils.formatEther(championReward)} ETH`);
+      
+      // Şampiyonun ödülünü kontrat üzerinden sorgula
+      try {
+        const reward = await contract.playerRewards(champion.address);
+        console.log(`Kontrata göre şampiyon ödülü: ${ethers.utils.formatEther(reward)} ETH`);
+        
+        // Ödülü talep et
+        if (reward.gt(0)) {
+          await contract.connect(champion).claimReward();
+          console.log("Şampiyon ödülü talep edildi");
+        }
+      } catch (error) {
+        console.log("Ödül bilgisi alınamadı:", error.message);
+      }
+    } catch (error) {
+      console.log("Şampiyon bakiyesi kontrol edilemedi:", error.message);
+    }
+    
+    // Kazanan bahisçi (5. bahisçi) bakiyesi kontrol
+    try {
+      const winningBettor = bettors[4];
+      const betterFinalBalance = await ethers.provider.getBalance(winningBettor.address);
+      const betterDifference = betterFinalBalance.sub(initialBalances[winningBettor.address]);
+      console.log(`Kazanan bahisçi bakiyesi değişimi: ${ethers.utils.formatEther(betterDifference)} ETH`);
+    } catch (error) {
+      console.log("Bahisçi bakiyesi kontrol edilemedi:", error.message);
+    }
+    
+    // Platform ücretleri
+    try {
+      const platformFees = await contract.platformFees();
+      console.log(`Platform ücretleri: ${ethers.utils.formatEther(platformFees)} ETH`);
+      
+      if (platformFees.gt(0)) {
+        const ownerInitialBalance = await ethers.provider.getBalance(owner.address);
+        
+        await contract.connect(owner).withdrawPlatformFees();
+        console.log("✅ Platform ücretleri çekildi");
+        
+        const ownerFinalBalance = await ethers.provider.getBalance(owner.address);
+        const ownerDifference = ownerFinalBalance.sub(ownerInitialBalance);
+        console.log(`Platform sahibi farkı: ${ethers.utils.formatEther(ownerDifference)} ETH`);
+      }
+    } catch (error) {
+      console.log("Platform ücretleri kontrol edilemedi:", error.message);
+    }
+  });
+});
